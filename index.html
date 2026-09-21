@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#2b6b4f" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="description"
+      content="Osvaldo Game: ajude o cachorrinho linguiça arlequim a comer todos os petiscos sem morder o próprio rabo."
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Osvaldo Game</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- ================= TELA INICIAL ================= -->
+      <section id="screen-start" class="screen screen--start is-active">
+        <div class="start-card">
+          <div class="start-mascot">
+            <canvas id="mascot" width="320" height="180" aria-hidden="true"></canvas>
+          </div>
+          <h1 class="title">
+            <span class="title__main">Osvaldo</span>
+            <span class="title__sub">Game</span>
+          </h1>
+          <p class="tagline">Corra atrás dos petiscos.<br />Mas cuidado com o próprio rabo!</p>
+
+          <form id="start-form" class="start-form" autocomplete="off">
+            <label class="field">
+              <span class="field__label">Qual é o seu nome?</span>
+              <input
+                id="player-name"
+                class="field__input"
+                type="text"
+                name="player"
+                maxlength="14"
+                placeholder="Digite aqui"
+                enterkeyhint="go"
+                autocomplete="off"
+                autocapitalize="words"
+                spellcheck="false"
+                required
+              />
+            </label>
+            <button id="start-button" class="btn btn--primary" type="submit">Iniciar</button>
+          </form>
+
+          <p class="hint">
+            <span class="hint__row"><b>Celular:</b> deslize o dedo na tela para guiar o Osvaldo</span>
+            <span class="hint__row"><b>Computador:</b> use as setas ou W A S D</span>
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= TELA DE JOGO ================= -->
+      <section id="screen-game" class="screen screen--game">
+        <header class="hud">
+          <div class="hud__slot hud__slot--left">
+            <span class="hud__label">Jogador</span>
+            <span id="hud-player" class="hud__value">—</span>
+          </div>
+          <div class="hud__slot hud__slot--center">
+            <span class="hud__game-name">Osvaldo Game</span>
+          </div>
+          <div class="hud__slot hud__slot--right">
+            <span class="hud__label">Pontos</span>
+            <span id="hud-score" class="hud__value hud__value--score">0000</span>
+          </div>
+        </header>
+
+        <main class="stage" id="stage">
+          <canvas id="board" aria-label="Área de jogo do Osvaldo"></canvas>
+
+          <!-- Contagem regressiva -->
+          <div id="overlay-countdown" class="overlay overlay--countdown" hidden>
+            <span id="countdown-text" class="countdown">3</span>
+          </div>
+
+          <!-- Pausa -->
+          <div id="overlay-pause" class="overlay overlay--panel" hidden>
+            <div class="panel">
+              <h2 class="panel__title">Pausado</h2>
+              <p class="panel__text">O Osvaldo está descansando as patinhas.</p>
+              <div class="panel__actions">
+                <button id="btn-resume" class="btn btn--primary" type="button">Continuar</button>
+                <button id="btn-quit" class="btn btn--ghost" type="button">Sair</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fim de jogo -->
+          <div id="overlay-gameover" class="overlay overlay--panel" hidden>
+            <div class="panel">
+              <h2 class="panel__title">Au au! 🐾</h2>
+              <p id="gameover-text" class="panel__text">
+                O Osvaldo mordeu o próprio rabo.
+              </p>
+              <div class="scoreline">
+                <span class="scoreline__label">Pontos / Recorde</span>
+                <span id="gameover-score" class="scoreline__value">0000/0000</span>
+              </div>
+              <p id="gameover-badge" class="badge" hidden>Novo recorde!</p>
+              <div class="panel__actions">
+                <button id="btn-again" class="btn btn--primary" type="button">Jogar de novo</button>
+                <button id="btn-change" class="btn btn--ghost" type="button">Trocar jogador</button>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <footer class="controls">
+          <button id="btn-sound" class="icon-btn" type="button" aria-label="Ligar ou desligar o som">
+            <span id="sound-icon">🔊</span>
+          </button>
+          <p id="controls-hint" class="controls__hint">Deslize o dedo • setas • W A S D</p>
+          <button id="btn-pause" class="icon-btn" type="button" aria-label="Pausar o jogo">
+            <span>⏸</span>
+          </button>
+        </footer>
+      </section>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "osvaldo-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Osvaldo Game - um jogo estilo snake com um dachshund arlequim",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.9"
+  }
+}
