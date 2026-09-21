@@ -24,19 +24,39 @@ o dedo) ou no **computador** (setas ou W A S D).
 
 ---
 
-## Rodando localmente
+## Rodando na sua máquina
+
+Precisa do [Node.js](https://nodejs.org) 20 ou mais novo (`node -v` para conferir).
 
 ```bash
+git clone https://github.com/Leotelles07/Osvaldo_app.git
+cd Osvaldo_app
 npm install
-npm run dev      # servidor de desenvolvimento (abre em http://localhost:5173)
-npm test         # testes das regras do jogo
-npm run build    # checagem de tipos + build de produção em dist/
-npm run preview  # serve o build de produção
+npm run dev
 ```
 
-Requer Node.js 20+.
+O terminal mostra dois endereços:
 
----
+```
+➜  Local:   http://localhost:5173/
+➜  Network: http://192.168.0.42:5173/
+```
+
+- **`Local`** — abra no navegador do computador para jogar com as setas ou W A S D.
+- **`Network`** — abra **esse** endereço no celular, com o aparelho na mesma
+  rede Wi-Fi do computador. É a melhor forma de testar o controle por toque,
+  que é a experiência principal do jogo. (O IP muda de rede para rede; use o
+  que o seu terminal imprimir.)
+
+Para parar o servidor: `Ctrl+C`.
+
+### Outros comandos
+
+```bash
+npm test         # testes das regras do jogo
+npm run build    # checagem de tipos + build de produção em dist/
+npm run preview  # serve o build de produção (também acessível pela rede)
+```
 
 ## Publicação
 
@@ -47,10 +67,10 @@ sobe a pasta `dist/`.
 Para ativar (uma vez só): **Settings → Pages → Source: GitHub Actions**.
 O jogo fica disponível em `https://leotelles07.github.io/Osvaldo_app/`.
 
-> O `base` do Vite já aponta para `/Osvaldo_app/` quando roda no GitHub Actions
-> e para `/` em desenvolvimento — veja [`vite.config.ts`](vite.config.ts). Se o
-> jogo for publicado em outro lugar (Vercel, Netlify, domínio próprio), basta
-> ajustar essa linha.
+> O build usa caminhos relativos (`base: './'` em
+> [`vite.config.ts`](vite.config.ts)), então a mesma pasta `dist/` funciona
+> servida na raiz de um domínio ou dentro de um subdiretório. Publicar em
+> Vercel, Netlify ou num domínio próprio não exige nenhum ajuste.
 
 ---
 
