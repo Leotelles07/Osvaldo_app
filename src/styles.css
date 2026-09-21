@@ -1,0 +1,499 @@
+/* ==========================================================================
+   Osvaldo Game — estilos
+   Mobile-first: tudo dimensionado com dvh + safe-area para caber na tela
+   do celular sem scroll e sem zoom acidental.
+   ========================================================================== */
+
+:root {
+  --grass-1: #3f8f63;
+  --grass-2: #2b6b4f;
+  --grass-deep: #1d4a37;
+  --cream: #fff7e8;
+  --ink: #23301f;
+  --accent: #ffb93b;
+  --accent-dark: #e09215;
+  --danger: #e4572e;
+  --panel: rgba(255, 247, 232, 0.97);
+  --shadow: 0 10px 30px rgba(12, 35, 23, 0.35);
+  --radius: 18px;
+  --font: 'Baloo 2', 'Trebuchet MS', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: radial-gradient(circle at 50% 0%, var(--grass-1), var(--grass-deep) 78%);
+  background-attachment: fixed;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  height: 100vh; /* fallback para navegadores sem dvh (iOS < 16.4) */
+  height: 100dvh;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- telas -- */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+    max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+}
+
+.screen.is-active {
+  display: flex;
+}
+
+/* -------------------------------------------------------- tela inicial -- */
+.screen--start {
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.start-card {
+  width: min(430px, 100%);
+  background: var(--panel);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  padding: 18px 22px 22px;
+  text-align: center;
+  animation: pop-in 0.45s cubic-bezier(0.18, 1.2, 0.4, 1);
+}
+
+.start-mascot {
+  display: flex;
+  justify-content: center;
+}
+
+.start-mascot canvas {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+.title {
+  margin: 2px 0 6px;
+  line-height: 0.9;
+}
+
+.title__main {
+  display: block;
+  font-size: clamp(2.4rem, 12vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--grass-2);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+}
+
+.title__sub {
+  display: block;
+  font-size: clamp(1rem, 5vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+}
+
+.tagline {
+  margin: 0 0 16px;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  color: #5b6b57;
+}
+
+.start-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field__label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 5px;
+  color: #5b6b57;
+}
+
+.field__input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 1.15rem; /* >=16px evita o zoom automático do iOS */
+  font-weight: 700;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 3px solid #e2d6c2;
+  background: #fffdf8;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field__input::placeholder {
+  color: #bdb3a3;
+  font-weight: 600;
+}
+
+.field__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(255, 185, 59, 0.25);
+}
+
+.field__input.is-invalid {
+  border-color: var(--danger);
+  animation: shake 0.35s;
+}
+
+/* ---------------------------------------------------------------- botões -- */
+.btn {
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 800;
+  border: none;
+  border-radius: 14px;
+  padding: 15px 18px;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.15s ease;
+  min-height: 52px; /* alvo de toque confortável para qualquer idade */
+}
+
+.btn:active {
+  transform: translateY(2px) scale(0.99);
+}
+
+.btn--primary {
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+  color: #4a2c00;
+  box-shadow: 0 5px 0 #b87410;
+}
+
+.btn--primary:active {
+  box-shadow: 0 2px 0 #b87410;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--grass-2);
+  border: 3px solid rgba(43, 107, 79, 0.35);
+}
+
+.icon-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 247, 232, 0.22);
+  color: var(--cream);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+.hint {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: #6f7d6a;
+  line-height: 1.5;
+}
+
+.hint__row {
+  display: block;
+}
+
+/* ----------------------------------------------------------- tela jogo -- */
+.screen--game {
+  gap: 8px;
+}
+
+.hud {
+  display: grid;
+  /* minmax(0,…) deixa as laterais encolherem sem empurrar o título do meio */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  color: var(--cream);
+}
+
+.hud__slot {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.hud__slot--left {
+  align-items: flex-start;
+}
+
+.hud__slot--center {
+  align-items: center;
+}
+
+.hud__slot--right {
+  align-items: flex-end;
+}
+
+.hud__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.hud__value {
+  font-size: clamp(0.95rem, 4.2vw, 1.25rem);
+  font-weight: 800;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud__value--score {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+/* "pontos/recorde" ocupa o dobro de dígitos: diminui para não brigar com o título */
+.hud__value--score.is-compact {
+  font-size: clamp(0.78rem, 3.5vw, 1rem);
+  letter-spacing: 0;
+}
+
+.hud__value--score.is-bump {
+  animation: bump 0.3s ease;
+}
+
+.hud__game-name {
+  font-size: clamp(0.88rem, 4.2vw, 1.4rem);
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+#board {
+  display: block;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  touch-action: none; /* o dedo guia o Osvaldo, não rola a página */
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 4px;
+}
+
+.controls__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(255, 247, 232, 0.72);
+  text-align: center;
+  flex: 1;
+}
+
+/* ------------------------------------------------------------ overlays -- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  z-index: 5;
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.overlay--countdown {
+  background: rgba(18, 48, 34, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.overlay--panel {
+  background: rgba(18, 48, 34, 0.62);
+  backdrop-filter: blur(3px);
+  padding: 14px;
+}
+
+.countdown {
+  font-size: clamp(4rem, 26vw, 8rem);
+  font-weight: 800;
+  color: var(--cream);
+  text-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+  animation: count-pop 0.6s ease-out;
+}
+
+.countdown.is-go {
+  color: var(--accent);
+  font-size: clamp(3rem, 20vw, 6rem);
+}
+
+.panel {
+  width: min(360px, 100%);
+  background: var(--panel);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 22px 20px;
+  text-align: center;
+  animation: pop-in 0.35s cubic-bezier(0.18, 1.2, 0.4, 1);
+}
+
+.panel__title {
+  margin: 0 0 6px;
+  font-size: 1.7rem;
+  color: var(--grass-2);
+}
+
+.panel__text {
+  margin: 0 0 14px;
+  color: #5b6b57;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.scoreline {
+  background: #f0e6d6;
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.scoreline__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #8a7c66;
+}
+
+.scoreline__value {
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  color: var(--grass-2);
+}
+
+.badge {
+  margin: 0 0 12px;
+  font-weight: 800;
+  color: var(--accent-dark);
+  animation: bump 0.6s ease infinite alternate;
+}
+
+.badge[hidden] {
+  display: none;
+}
+
+.panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------------------------------------------------------- animações -- */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes count-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bump {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Telas largas (desktop): deixa o tabuleiro grande e centralizado */
+@media (min-width: 900px) and (orientation: landscape) {
+  .controls__hint {
+    font-size: 0.82rem;
+  }
+}
