@@ -1,17 +1,21 @@
 import { defineConfig } from 'vite';
 
-// Em GitHub Pages o site fica em https://<user>.github.io/Osvaldo_app/
-// Localmente (dev/preview) a base precisa ser "/".
-const base = process.env.GITHUB_ACTIONS ? '/Osvaldo_app/' : '/';
-
 export default defineConfig({
-  base,
+  // Caminhos relativos: o mesmo build funciona servido na raiz (servidor local,
+  // Vercel, Netlify) e dentro de um subdiretório (GitHub Pages, que publica em
+  // /Osvaldo_app/). Sem isso, a página abriria em branco em um dos dois casos.
+  base: './',
   build: {
     target: 'es2020',
     assetsInlineLimit: 8192,
   },
   server: {
+    // Escuta também na rede local, para abrir o jogo no celular pelo IP da máquina.
     host: true,
     port: 5173,
+  },
+  preview: {
+    host: true,
+    port: 4173,
   },
 });
