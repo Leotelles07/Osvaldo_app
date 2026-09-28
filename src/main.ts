@@ -9,6 +9,7 @@ import { attachInput } from './game/input';
 import { audio } from './game/audio';
 import { startMascot } from './ui/mascot';
 import type { Direction } from './game/config';
+import { FUR_PALETTES, DEFAULT_FUR_COLOR, type FurColorId } from './game/draw';
 
 /* ------------------------------------------------------------- elementos -- */
 
@@ -19,9 +20,12 @@ const $ = <T extends HTMLElement>(id: string): T => {
 };
 
 const screenStart = $('screen-start');
+const screenColor = $('screen-color');
 const screenGame = $('screen-game');
 const nameInput = $<HTMLInputElement>('player-name');
 const startForm = $<HTMLFormElement>('start-form');
+const colorOptions = $('color-options');
+const btnConfirmColor = $<HTMLButtonElement>('btn-confirm-color');
 const stage = $('stage');
 const board = $<HTMLCanvasElement>('board');
 const hudPlayer = $('hud-player');
@@ -43,7 +47,7 @@ const soundIcon = $('sound-icon');
 
 /* ----------------------------------------------------------------- estado -- */
 
-type AppScreen = 'start' | 'game';
+type AppScreen = 'start' | 'color' | 'game';
 
 const NAME_KEY = 'osvaldo:player';
 const MAX_NAME = 14;
@@ -55,6 +59,13 @@ let paused = false;
 let countdownTimer: number | null = null;
 let lastEatAt = -Infinity;
 let stopMascot: (() => void) | null = null;
+let stopColorMascot: (() => void) | null = null;
+/**
+ * Cor escolhida pelo jogador para a partida. Vive só em memória (não é
+ * persistida): atualizar a página sempre volta para a escolha padrão, mas
+ * "jogar de novo" na mesma sessão mantém a cor já confirmada.
+ */
+let selectedColorId: FurColorId = DEFAULT_FUR_COLOR;
 
 const renderer = new Renderer(board);
 const game = new Game({
@@ -95,12 +106,24 @@ function updateScore(score: number, bump = false): void {
 
 function showScreen(screen: AppScreen): void {
   screenStart.classList.toggle('is-active', screen === 'start');
+  screenColor.classList.toggle('is-active', screen === 'color');
   screenGame.classList.toggle('is-active', screen === 'game');
+
   if (screen === 'start') {
     stopMascot ??= startMascot($<HTMLCanvasElement>('mascot'));
   } else {
     stopMascot?.();
     stopMascot = null;
+  }
+
+  if (screen === 'color') {
+    stopColorMascot ??= startMascot(
+      $<HTMLCanvasElement>('mascot-color'),
+      () => FUR_PALETTES[selectedColorId],
+    );
+  } else {
+    stopColorMascot?.();
+    stopColorMascot = null;
   }
 }
 
@@ -243,6 +266,25 @@ startForm.addEventListener('submit', (event) => {
   }
 
   nameInput.blur(); // fecha o teclado do celular antes de começar
+  showScreen('color');
+});
+
+colorOptions.addEventListener('click', (event) => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.color-swatch');
+  if (!button) return;
+  const colorId = button.dataset.color as FurColorId | undefined;
+  if (!colorId || !(colorId in FUR_PALETTES)) return;
+
+  selectedColorId = colorId;
+  for (const swatch of colorOptions.querySelectorAll<HTMLButtonElement>('.color-swatch')) {
+    const isSelected = swatch === button;
+    swatch.classList.toggle('is-selected', isSelected);
+    swatch.setAttribute('aria-checked', String(isSelected));
+  }
+});
+
+btnConfirmColor.addEventListener('click', () => {
+  renderer.setFurColor(selectedColorId);
   showScreen('game');
   beginRound();
 });

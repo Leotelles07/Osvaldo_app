@@ -4,7 +4,16 @@
  */
 import { CONFIG } from './config';
 import type { Game } from './core';
-import { drawArena, drawOsvaldo, drawTreat, lerp, type Point } from './draw';
+import {
+  drawArena,
+  drawOsvaldo,
+  drawTreat,
+  lerp,
+  FUR_PALETTES,
+  DEFAULT_FUR_COLOR,
+  type FurColorId,
+  type Point,
+} from './draw';
 
 /** Distância (em células) acima da qual dois segmentos vizinhos estão "quebrados" pela borda. */
 const BREAK_DISTANCE = 1.6;
@@ -15,12 +24,18 @@ export class Renderer {
   cell = 20;
   private cssWidth = 0;
   private cssHeight = 0;
+  private fur = FUR_PALETTES[DEFAULT_FUR_COLOR];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('Canvas 2D não está disponível neste navegador.');
     this.ctx = ctx;
+  }
+
+  /** Define a cor do Osvaldo usada nas próximas renderizações. */
+  setFurColor(colorId: FurColorId): void {
+    this.fur = FUR_PALETTES[colorId];
   }
 
   /**
@@ -144,6 +159,7 @@ export class Renderer {
           moving,
           withHead: run.offset === 0,
           withTail: run.offset + run.points.length === points.length,
+          fur: this.fur,
         });
         ctx.restore();
       }
