@@ -2,9 +2,16 @@
  * Osvaldo parado na tela inicial: reaproveita exatamente o mesmo desenho do
  * jogo, só que com um corpo montado à mão (ondulado, de perfil).
  */
-import { drawOsvaldo, type Point } from '../game/draw';
+import { drawOsvaldo, FUR_PALETTES, DEFAULT_FUR_COLOR, type FurPalette, type Point } from '../game/draw';
 
-export function startMascot(canvas: HTMLCanvasElement): () => void {
+/**
+ * @param getFur Chamada a cada quadro para saber a paleta atual — permite trocar
+ * a cor em tempo real (tela de escolha de cor) sem reiniciar a animação.
+ */
+export function startMascot(
+  canvas: HTMLCanvasElement,
+  getFur: () => FurPalette = () => FUR_PALETTES[DEFAULT_FUR_COLOR],
+): () => void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return () => {};
 
@@ -44,6 +51,7 @@ export function startMascot(canvas: HTMLCanvasElement): () => void {
       totalSegments: segments,
       moving: true,
       withHead: true,
+      fur: getFur(),
     });
 
     raf = requestAnimationFrame(frame);

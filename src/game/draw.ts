@@ -12,21 +12,92 @@ export interface Point {
   y: number;
 }
 
-export const FUR = {
-  base: '#efe3d4',
-  patchDark: '#3f3d48',
-  patchMid: '#736d78',
-  tan: '#c98a4b',
-  paw: '#d8c6b0',
-  pawPad: '#8d7360',
-  outline: '#6d5645',
-  ear: '#463731',
-  nose: '#2b2429',
-  eye: '#2b2429',
-  eyeBlue: '#4aa3c7',
-  tongue: '#e8687f',
-  collar: '#e4572e',
+export interface FurPalette {
+  base: string;
+  patchDark: string;
+  patchMid: string;
+  tan: string;
+  paw: string;
+  pawPad: string;
+  outline: string;
+  ear: string;
+  nose: string;
+  eye: string;
+  eyeBlue: string;
+  tongue: string;
+  collar: string;
+}
+
+export type FurColorId = 'default' | 'preto' | 'marrom' | 'branco';
+
+/** Paletas de pelagem selecionáveis pelo jogador; todas mantêm o padrão arlequim. */
+export const FUR_PALETTES: Record<FurColorId, FurPalette> = {
+  default: {
+    base: '#efe3d4',
+    patchDark: '#3f3d48',
+    patchMid: '#736d78',
+    tan: '#c98a4b',
+    paw: '#d8c6b0',
+    pawPad: '#8d7360',
+    outline: '#6d5645',
+    ear: '#463731',
+    nose: '#2b2429',
+    eye: '#2b2429',
+    eyeBlue: '#4aa3c7',
+    tongue: '#e8687f',
+    collar: '#e4572e',
+  },
+  preto: {
+    base: '#302f35',
+    patchDark: '#121214',
+    patchMid: '#4c4b54',
+    tan: '#5c5a63',
+    paw: '#3d3c43',
+    pawPad: '#1a191c',
+    outline: '#121213',
+    ear: '#19181b',
+    nose: '#0d0d0e',
+    eye: '#0d0d0e',
+    eyeBlue: '#4aa3c7',
+    tongue: '#e8687f',
+    collar: '#e4572e',
+  },
+  marrom: {
+    base: '#8a5a34',
+    patchDark: '#432c17',
+    patchMid: '#6b4526',
+    tan: '#c98a4b',
+    paw: '#a97a4c',
+    pawPad: '#553823',
+    outline: '#3f2a17',
+    ear: '#3f2a17',
+    nose: '#2b1c10',
+    eye: '#2b2429',
+    eyeBlue: '#4aa3c7',
+    tongue: '#e8687f',
+    collar: '#e4572e',
+  },
+  branco: {
+    base: '#fbf7ec',
+    patchDark: '#c7bca8',
+    patchMid: '#e2d8c5',
+    tan: '#e8b3a4',
+    paw: '#f4efe2',
+    pawPad: '#d99a92',
+    outline: '#c2b6a0',
+    ear: '#e2d5c0',
+    nose: '#d98d82',
+    eye: '#2b2429',
+    eyeBlue: '#4aa3c7',
+    tongue: '#e8687f',
+    collar: '#e4572e',
+  },
 };
+
+export const DEFAULT_FUR_COLOR: FurColorId = 'default';
+
+/** Paleta usada quando nenhuma é informada explicitamente. */
+export const FUR = FUR_PALETTES[DEFAULT_FUR_COLOR];
 
 /** Hash determinístico: o mesmo segmento tem sempre as mesmas manchas. */
 function hash(n: number): number {
@@ -229,6 +300,7 @@ function drawPaws(
   moving: boolean,
   front: boolean,
   back: boolean,
+  fur: FurPalette,
 ): void {
   const n = points.length;
   if (n < 3) return;
@@ -255,15 +327,15 @@ function drawPaws(
       const px = p.x - dy * out * side + dx * along;
       const py = p.y + dx * out * side + dy * along;
 
-      ctx.fillStyle = FUR.outline;
+      ctx.fillStyle = fur.outline;
       ctx.beginPath();
       ctx.ellipse(px, py, cell * 0.16, cell * 0.13, angle, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = FUR.paw;
+      ctx.fillStyle = fur.paw;
       ctx.beginPath();
       ctx.ellipse(px, py, cell * 0.13, cell * 0.1, angle, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = FUR.pawPad;
+      ctx.fillStyle = fur.pawPad;
       ctx.beginPath();
       ctx.ellipse(px + dx * cell * 0.03, py + dy * cell * 0.03, cell * 0.06, cell * 0.045, angle, 0, Math.PI * 2);
       ctx.fill();
@@ -279,6 +351,7 @@ function drawHead(
   time: number,
   dead: boolean,
   chomp: number,
+  fur: FurPalette,
 ): void {
   let dx = head.x - neck.x;
   let dy = head.y - neck.y;
@@ -298,12 +371,12 @@ function drawHead(
   const r = cell * 0.42;
   const stroke = Math.max(1, cell * 0.05);
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = FUR.outline;
+  ctx.strokeStyle = fur.outline;
   ctx.lineWidth = stroke;
 
   // Orelhas compridas e caídas, uma de cada lado, balançando com a corrida
   const flop = dead ? 0 : Math.sin(time / 160) * 0.16;
-  ctx.fillStyle = FUR.ear;
+  ctx.fillStyle = fur.ear;
   for (const side of [-1, 1]) {
     ctx.save();
     ctx.translate(-r * 0.22, side * r * 0.5);
@@ -315,14 +388,14 @@ function drawHead(
   }
 
   // Focinho comprido, marca registrada do dachshund
-  ctx.fillStyle = FUR.tan;
+  ctx.fillStyle = fur.tan;
   ctx.beginPath();
   ctx.ellipse(r * 0.9, 0, r * 0.66, r * 0.4, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
   // Crânio
-  ctx.fillStyle = FUR.base;
+  ctx.fillStyle = fur.base;
   ctx.beginPath();
   ctx.ellipse(0, 0, r * 1.0, r * 0.9, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -330,14 +403,14 @@ function drawHead(
 
   // Língua de fora ao mastigar
   if (chomp > 0.02) {
-    ctx.fillStyle = FUR.tongue;
+    ctx.fillStyle = fur.tongue;
     ctx.beginPath();
     ctx.ellipse(r * 1.25, r * 0.1, r * 0.26 * chomp, r * 0.18 * chomp, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
   // Nariz
-  ctx.fillStyle = FUR.nose;
+  ctx.fillStyle = fur.nose;
   ctx.beginPath();
   ctx.ellipse(r * 1.45, 0, r * 0.21, r * 0.17, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -345,14 +418,14 @@ function drawHead(
   // Olhos — um azul, típico dos arlequins
   const eyeR = r * 0.16;
   for (const [side, color] of [
-    [-1, FUR.eye],
-    [1, FUR.eyeBlue],
+    [-1, fur.eye],
+    [1, fur.eyeBlue],
   ] as Array<[number, string]>) {
     const ex = r * 0.28;
     const ey = side * r * 0.4;
     if (dead) {
       ctx.save();
-      ctx.strokeStyle = FUR.nose;
+      ctx.strokeStyle = fur.nose;
       ctx.lineWidth = Math.max(1.5, r * 0.12);
       ctx.lineCap = 'round';
       ctx.beginPath();
@@ -379,7 +452,7 @@ function drawHead(
   }
 
   // Sobrancelhas claras, charme de dachshund
-  ctx.fillStyle = FUR.tan;
+  ctx.fillStyle = fur.tan;
   for (const side of [-1, 1]) {
     ctx.beginPath();
     ctx.ellipse(-r * 0.05, side * r * 0.46, r * 0.17, r * 0.1, 0, 0, Math.PI * 2);
@@ -404,6 +477,8 @@ export interface DogOptions {
   withHead?: boolean;
   /** Patas traseiras: só no trecho que contém o rabo. */
   withTail?: boolean;
+  /** Paleta de pelagem; usa a padrão quando omitida. */
+  fur?: FurPalette;
 }
 
 export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): void {
@@ -418,6 +493,7 @@ export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): vo
     moving = true,
     withHead = true,
     withTail = true,
+    fur = FUR_PALETTES[DEFAULT_FUR_COLOR],
   } = opts;
 
   if (points.length === 0) return;
@@ -439,11 +515,11 @@ export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): vo
   ctx.fill(outerPath);
   ctx.restore();
 
-  drawPaws(ctx, points, cell, time, moving && !dead, withHead, withTail);
+  drawPaws(ctx, points, cell, time, moving && !dead, withHead, withTail, fur);
 
-  ctx.fillStyle = FUR.outline;
+  ctx.fillStyle = fur.outline;
   ctx.fill(outerPath);
-  ctx.fillStyle = FUR.base;
+  ctx.fillStyle = fur.base;
   ctx.fill(innerPath);
 
   // Manchas arlequim, recortadas dentro do corpo
@@ -458,7 +534,7 @@ export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): vo
       const h2 = hash(seg * 5.3 + k * 2.9);
       const h3 = hash(seg * 9.7 + k * 4.1);
       const rad = cell * (0.15 + h3 * 0.13);
-      ctx.fillStyle = h1 > 0.62 ? FUR.patchMid : FUR.patchDark;
+      ctx.fillStyle = h1 > 0.62 ? fur.patchMid : fur.patchDark;
       ctx.beginPath();
       ctx.ellipse(
         p.x + (h1 - 0.5) * cell * 0.5,
@@ -477,7 +553,7 @@ export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): vo
   if (withHead && points.length >= 2) {
     const a = points[0];
     const b = points[1];
-    ctx.strokeStyle = FUR.collar;
+    ctx.strokeStyle = fur.collar;
     ctx.lineWidth = cell * 0.9; // largo o bastante para atravessar o corpo todo
     ctx.lineCap = 'butt';
     ctx.beginPath();
@@ -489,6 +565,6 @@ export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): vo
 
   if (withHead) {
     const neck = points.length > 1 ? points[1] : { x: points[0].x - cell, y: points[0].y };
-    drawHead(ctx, points[0], neck, cell, time, dead, chomp);
+    drawHead(ctx, points[0], neck, cell, time, dead, chomp, fur);
   }
 }

@@ -228,6 +228,101 @@ body {
   display: block;
 }
 
+/* ------------------------------------------------------ tela de cor -- */
+.screen--color {
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.color-card {
+  width: min(430px, 100%);
+  background: var(--panel);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  padding: 18px 22px 22px;
+  text-align: center;
+  animation: pop-in 0.45s cubic-bezier(0.18, 1.2, 0.4, 1);
+}
+
+.color-title {
+  margin: 4px 0 10px;
+  font-size: clamp(1.3rem, 6vw, 1.7rem);
+  font-weight: 800;
+  color: var(--grass-2);
+}
+
+.color-mascot {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.color-mascot canvas {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+.color-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 6px 0 18px;
+}
+
+.color-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px;
+  border-radius: 14px;
+  border: 3px solid transparent;
+  background: #fffdf8;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+
+.color-swatch:active {
+  transform: scale(0.96);
+}
+
+.color-swatch.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(255, 185, 59, 0.25);
+}
+
+.color-swatch__dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid rgba(35, 48, 31, 0.15);
+}
+
+.color-swatch__dot--default {
+  background: radial-gradient(circle at 35% 30%, #efe3d4, #3f3d48 78%);
+}
+
+.color-swatch__dot--preto {
+  background: #1f1f22;
+}
+
+.color-swatch__dot--marrom {
+  background: #6b4526;
+}
+
+.color-swatch__dot--branco {
+  background: #fbf7ec;
+}
+
+.color-swatch__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #5b6b57;
+}
+
 /* ----------------------------------------------------------- tela jogo -- */
 .screen--game {
   gap: 8px;
