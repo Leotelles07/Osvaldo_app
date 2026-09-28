@@ -2,7 +2,7 @@
  * Efeitos sonoros sintetizados na hora (Web Audio API): nenhum arquivo para
  * baixar, o jogo abre instantaneamente até em conexão ruim.
  */
-type SoundName = 'eat' | 'tick' | 'go' | 'death' | 'record';
+type SoundName = 'eat' | 'bigEat' | 'tick' | 'go' | 'death' | 'record' | 'sick' | 'boom';
 
 const STORAGE_KEY = 'osvaldo:muted';
 
@@ -78,6 +78,29 @@ class AudioEngine {
     osc.stop(start + duration + 0.02);
   }
 
+  /** Chiado de ruído branco que vai abafando: o "estouro" da dinamite. */
+  private noise(start: number, duration: number, gain = 1): void {
+    if (!this.ctx || !this.master) return;
+    const length = Math.floor(this.ctx.sampleRate * duration);
+    const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2400, start);
+    filter.frequency.exponentialRampToValueAtTime(120, start + duration);
+    const env = this.ctx.createGain();
+    env.gain.setValueAtTime(gain, start);
+    env.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    src.connect(filter);
+    filter.connect(env);
+    env.connect(this.master);
+    src.start(start);
+    src.stop(start + duration + 0.02);
+  }
+
   play(name: SoundName): void {
     if (this.muted || !this.ctx) return;
     const t = this.ctx.currentTime;
@@ -85,6 +108,18 @@ class AudioEngine {
       case 'eat':
         this.blip(620, t, 0.09, 'square', 0.7);
         this.blip(880, t + 0.06, 0.12, 'square', 0.5);
+        break;
+      case 'bigEat':
+        [620, 880, 1175].forEach((f, i) => this.blip(f, t + i * 0.06, 0.12, 'square', 0.6));
+        break;
+      case 'sick':
+        // "Bleh": nota que desce tremida
+        this.slide(360, 150, t, 0.4, 'triangle');
+        this.slide(300, 120, t + 0.22, 0.45, 'triangle');
+        break;
+      case 'boom':
+        this.noise(t, 0.9, 1.4);
+        this.slide(160, 40, t, 0.7, 'sine');
         break;
       case 'tick':
         this.blip(440, t, 0.12, 'triangle', 0.6);
