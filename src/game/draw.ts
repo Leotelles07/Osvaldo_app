@@ -6,6 +6,7 @@
  * vira um único Path2D, preenchido de uma vez — barato mesmo com o Osvaldo bem
  * comprido, e utilizável como região de recorte para as manchas.
  */
+import type { TreatKind } from './config';
 
 export interface Point {
   x: number;
@@ -155,22 +156,364 @@ export function drawArena(
   ctx.fillRect(0, 0, width, height);
 }
 
-/* -------------------------------------------------------------- petisco -- */
+/* ------------------------------------------------------------- petiscos -- */
 
-export function drawTreat(ctx: CanvasRenderingContext2D, p: Point, cell: number, time: number): void {
-  const bob = Math.sin(time / 260) * cell * 0.07;
-  const pulse = 1 + Math.sin(time / 210) * 0.06;
+/**
+ * Preenche a forma com contorno só do lado de fora: o traço (com o dobro da
+ * largura) vai por baixo e o preenchimento cobre a metade interna. Assim as
+ * junções entre as partes de uma forma composta (ex.: as pontas do osso) não
+ * aparecem como linhas no meio do desenho.
+ */
+function fillOutlined(
+  ctx: CanvasRenderingContext2D,
+  path: Path2D,
+  fill: string,
+  outline: string,
+  width: number,
+): void {
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = width * 2;
+  ctx.stroke(path);
+  ctx.fillStyle = fill;
+  ctx.fill(path);
+}
+
+/** Ossinho maciço: silhueta única, branca, com borda escura bem fina. */
+function drawBone(ctx: CanvasRenderingContext2D, r: number, lw: number): void {
+  const len = r * 1.3;
+  const knob = r * 0.48;
+  const bone = new Path2D();
+  for (const [sx, sy] of [
+    [-1, -1],
+    [-1, 1],
+    [1, -1],
+    [1, 1],
+  ]) {
+    const cx = (sx * len) / 2;
+    const cy = sy * knob * 0.72;
+    bone.moveTo(cx + knob, cy);
+    bone.arc(cx, cy, knob, 0, Math.PI * 2);
+  }
+  // Mesmo sentido dos círculos: com a regra "nonzero" tudo vira uma peça só.
+  bone.rect(-len / 2, -knob * 0.8, len, knob * 1.6);
+  fillOutlined(ctx, bone, '#ffffff', 'rgba(38, 32, 32, 0.8)', lw);
+}
+
+function drawBeef(ctx: CanvasRenderingContext2D, r: number, lw: number): void {
+  const steak = new Path2D();
+  steak.moveTo(-r * 0.95, -r * 0.1);
+  steak.bezierCurveTo(-r * 1.0, -r * 0.78, -r * 0.1, -r * 0.88, r * 0.38, -r * 0.62);
+  steak.bezierCurveTo(r * 0.98, -r * 0.35, r * 1.06, r * 0.38, r * 0.55, r * 0.64);
+  steak.bezierCurveTo(r * 0.1, r * 0.88, -r * 0.9, r * 0.62, -r * 0.95, -r * 0.1);
+  steak.closePath();
+
+  // Borda de gordura
+  fillOutlined(ctx, steak, '#f6dfcf', '#5c2419', lw);
+
+  // Carne
+  ctx.save();
+  ctx.translate(r * 0.03, 0);
+  ctx.scale(0.8, 0.76);
+  ctx.fillStyle = '#c63a2e';
+  ctx.fill(steak);
+  ctx.restore();
+
+  // Marmoreio
+  ctx.strokeStyle = '#ec9a8c';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(1, lw * 0.9);
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.15, -r * 0.4);
+  ctx.quadraticCurveTo(r * 0.2, -r * 0.2, r * 0.5, -r * 0.3);
+  ctx.moveTo(-r * 0.05, r * 0.15);
+  ctx.quadraticCurveTo(r * 0.25, r * 0.35, r * 0.55, r * 0.2);
+  ctx.stroke();
+
+  // Ossinho do corte
+  ctx.fillStyle = '#fff7ea';
+  ctx.strokeStyle = '#5c2419';
+  ctx.lineWidth = lw;
+  ctx.beginPath();
+  ctx.arc(-r * 0.45, -r * 0.08, r * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawStrawberry(ctx: CanvasRenderingContext2D, r: number, lw: number): void {
+  const berry = new Path2D();
+  berry.moveTo(0, r * 0.95);
+  berry.bezierCurveTo(-r * 0.98, r * 0.35, -r * 0.95, -r * 0.62, 0, -r * 0.48);
+  berry.bezierCurveTo(r * 0.95, -r * 0.62, r * 0.98, r * 0.35, 0, r * 0.95);
+  berry.closePath();
+  fillOutlined(ctx, berry, '#e8323c', '#7a1418', lw);
+
+  // Brilho
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.beginPath();
+  ctx.ellipse(-r * 0.38, -r * 0.1, r * 0.12, r * 0.22, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Sementinhas
+  ctx.fillStyle = '#ffe07a';
+  for (const [sx, sy] of [
+    [-0.3, 0.2],
+    [0.05, -0.1],
+    [0.35, 0.1],
+    [-0.05, 0.42],
+    [0.25, 0.48],
+    [-0.4, -0.25],
+    [0.4, -0.3],
+  ]) {
+    ctx.beginPath();
+    ctx.ellipse(sx * r, sy * r, r * 0.05, r * 0.075, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Folhinhas
+  const leaves = new Path2D();
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i - 2) * 0.62 + Math.PI;
+    const cx = Math.cos(a) * r * 0.26;
+    const cy = -r * 0.52 - Math.sin(a) * r * 0.1;
+    leaves.moveTo(cx + r * 0.3, cy);
+    leaves.ellipse(cx, cy, r * 0.3, r * 0.11, a, 0, Math.PI * 2);
+  }
+  fillOutlined(ctx, leaves, '#43a84f', '#1f5a27', lw * 0.8);
+}
+
+function drawBanana(ctx: CanvasRenderingContext2D, r: number, lw: number): void {
+  ctx.translate(0, -r * 0.12);
+  const banana = new Path2D();
+  banana.arc(0, -r * 0.8, r * 1.3, Math.PI * 0.22, Math.PI * 0.78);
+  banana.arc(0, -r * 1.25, r * 1.3, Math.PI * 0.72, Math.PI * 0.28, true);
+  banana.closePath();
+  fillOutlined(ctx, banana, '#f9d648', '#7a5a10', lw);
+
+  // Faixa de brilho ao longo da casca
+  ctx.strokeStyle = '#fff1a6';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(1, r * 0.1);
+  ctx.beginPath();
+  ctx.arc(0, -r * 0.95, r * 1.25, Math.PI * 0.32, Math.PI * 0.62);
+  ctx.stroke();
+
+  // Cabinho e pontinha
+  ctx.fillStyle = '#6b4a1a';
+  ctx.beginPath();
+  ctx.ellipse(r * 1.0, -r * 0.14, r * 0.12, r * 0.16, -0.7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(-r * 0.93, -r * 0.08, r * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawAvocado(ctx: CanvasRenderingContext2D, r: number, lw: number): void {
+  ctx.translate(0, -r * 0.05);
+  const shape = new Path2D();
+  shape.moveTo(r * 0.72, r * 0.25);
+  shape.arc(0, r * 0.25, r * 0.72, 0, Math.PI * 2);
+  shape.moveTo(r * 0.45, -r * 0.42);
+  shape.arc(0, -r * 0.42, r * 0.45, 0, Math.PI * 2);
+  shape.moveTo(-r * 0.45, -r * 0.42);
+  shape.lineTo(r * 0.45, -r * 0.42);
+  shape.lineTo(r * 0.72, r * 0.25);
+  shape.lineTo(-r * 0.72, r * 0.25);
+  shape.closePath();
+
+  // Casca
+  fillOutlined(ctx, shape, '#2f5d23', '#1b3413', lw);
+
+  // Polpa: borda mais verde, miolo amarelado
+  ctx.save();
+  ctx.translate(0, r * 0.03);
+  ctx.scale(0.8, 0.82);
+  ctx.fillStyle = '#b9d36a';
+  ctx.fill(shape);
+  ctx.scale(0.86, 0.86);
+  ctx.fillStyle = '#e6f0a2';
+  ctx.fill(shape);
+  ctx.restore();
+
+  // Caroço
+  ctx.fillStyle = '#8a5a2b';
+  ctx.strokeStyle = '#4a2d12';
+  ctx.lineWidth = lw;
+  ctx.beginPath();
+  ctx.arc(0, r * 0.3, r * 0.32, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#b37d49';
+  ctx.beginPath();
+  ctx.arc(-r * 0.1, r * 0.2, r * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawWatermelon(ctx: CanvasRenderingContext2D, r: number, lw: number): void {
+  const cy = -r * 0.35;
+  const slice = (radius: number) => {
+    const path = new Path2D();
+    path.moveTo(radius, cy);
+    path.arc(0, cy, radius, 0, Math.PI);
+    path.closePath();
+    return path;
+  };
+
+  // Casca, parte branca e polpa
+  fillOutlined(ctx, slice(r * 1.02), '#3c8d3a', '#1d4d1c', lw);
+  ctx.fillStyle = '#eaf6d2';
+  ctx.fill(slice(r * 0.86));
+  ctx.fillStyle = '#f0525e';
+  ctx.fill(slice(r * 0.76));
+
+  // Sementes
+  ctx.fillStyle = '#2b2429';
+  for (const [sx, sy] of [
+    [-0.42, -0.16],
+    [-0.15, 0.08],
+    [0.15, 0.08],
+    [0.42, -0.16],
+    [0, -0.2],
+  ]) {
+    ctx.beginPath();
+    ctx.ellipse(sx * r, sy * r, r * 0.055, r * 0.09, sx * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/** Barra de chocolate meio amargo, metade ainda no papel. */
+function drawChocolate(ctx: CanvasRenderingContext2D, r: number, lw: number): void {
+  const w = r * 1.25;
+  const h = r * 1.75;
+
+  ctx.fillStyle = '#3b1f14';
+  ctx.strokeStyle = '#140905';
+  ctx.lineWidth = lw;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  roundedRect(ctx, -w / 2, -h / 2, w, h, r * 0.14);
+  ctx.fill();
+  ctx.stroke();
+
+  // Quadradinhos da barra
+  const pad = w * 0.12;
+  const sq = (w - pad * 3) / 2;
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 2; col++) {
+      const x = -w / 2 + pad + col * (sq + pad);
+      const y = -h / 2 + pad + row * (sq + pad);
+      ctx.fillStyle = '#5a3221';
+      ctx.fillRect(x, y, sq, sq);
+      ctx.fillStyle = '#74432c';
+      ctx.fillRect(x, y, sq, sq * 0.22);
+    }
+  }
+
+  // Embrulho vermelho com a borda rasgada
+  const top = h * 0.05;
+  const teeth = 5;
+  const wrap = new Path2D();
+  wrap.moveTo(-w / 2, h / 2);
+  wrap.lineTo(-w / 2, top);
+  for (let i = 1; i <= teeth * 2; i++) {
+    wrap.lineTo(-w / 2 + (w * i) / (teeth * 2), top + (i % 2 === 1 ? -r * 0.1 : 0));
+  }
+  wrap.lineTo(w / 2, h / 2);
+  wrap.closePath();
+  fillOutlined(ctx, wrap, '#b3202a', '#4f0c11', lw);
+  ctx.fillStyle = '#f2c14e';
+  ctx.fillRect(-w / 2, h * 0.24, w, h * 0.07);
+}
+
+/** Banana de dinamite: três bananas amarradas e o pavio aceso. */
+function drawBomb(ctx: CanvasRenderingContext2D, r: number, lw: number, time: number): void {
+  const stickW = r * 0.42;
+  const top = -r * 0.5;
+  const stickH = r * 1.4;
+
+  for (const x of [-0.44, 0.44, 0]) {
+    const cx = x * r;
+    ctx.fillStyle = '#d63a2f';
+    ctx.strokeStyle = '#5b1410';
+    ctx.lineWidth = lw;
+    ctx.beginPath();
+    roundedRect(ctx, cx - stickW / 2, top + (x === 0 ? -r * 0.08 : 0), stickW, stickH, r * 0.1);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 170, 150, 0.55)';
+    ctx.fillRect(cx - stickW * 0.3, top + r * 0.08, stickW * 0.16, stickH * 0.75);
+  }
+
+  // Fita que amarra as bananas
+  ctx.fillStyle = '#2b2429';
+  ctx.fillRect(-r * 0.7, r * 0.18, r * 1.4, r * 0.2);
+
+  // Pavio
+  const fuseEnd = { x: r * 0.42, y: -r * 0.98 };
+  ctx.strokeStyle = '#4a3b2a';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(1.2, lw * 1.3);
+  ctx.beginPath();
+  ctx.moveTo(0, top - r * 0.08);
+  ctx.quadraticCurveTo(0, -r * 0.95, fuseEnd.x, fuseEnd.y);
+  ctx.stroke();
+
+  // Faísca piscando na ponta do pavio
+  const flicker = 0.75 + Math.sin(time / 38) * 0.15 + Math.sin(time / 17) * 0.1;
+  const spark = r * 0.3 * flicker;
+  ctx.save();
+  ctx.translate(fuseEnd.x, fuseEnd.y);
+  ctx.rotate(time / 90);
+  ctx.strokeStyle = '#ffd23f';
+  ctx.lineWidth = Math.max(1, lw);
+  ctx.beginPath();
+  for (let i = 0; i < 4; i++) {
+    const a = (i * Math.PI) / 4;
+    ctx.moveTo(Math.cos(a) * spark, Math.sin(a) * spark);
+    ctx.lineTo(-Math.cos(a) * spark, -Math.sin(a) * spark);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#ff7b1c';
+  ctx.beginPath();
+  ctx.arc(0, 0, spark * 0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * Desenha qualquer petisco. Os bons têm brilho dourado (chamam o Osvaldo), os
+ * perigosos têm uma aura vermelha pulsando — dá para diferenciar de relance.
+ */
+export function drawTreat(
+  ctx: CanvasRenderingContext2D,
+  kind: TreatKind,
+  p: Point,
+  cell: number,
+  time: number,
+): void {
+  const danger = kind === 'chocolate' || kind === 'bomb';
+  // Cada item balança num ritmo próprio, para não parecerem sincronizados.
+  const phase = p.x * 0.013 + p.y * 0.021;
+  const bob = Math.sin(time / 260 + phase) * cell * 0.07;
+  const pulse = 1 + Math.sin(time / 210 + phase) * 0.06;
   const r = cell * 0.4 * pulse;
+  const lw = Math.max(1, cell * 0.035);
 
   ctx.save();
 
-  // Brilho: ajuda a localizar o petisco à distância
-  const glow = ctx.createRadialGradient(p.x, p.y + bob, 0, p.x, p.y + bob, r * 1.9);
-  glow.addColorStop(0, 'rgba(255, 240, 190, 0.5)');
-  glow.addColorStop(1, 'rgba(255, 240, 190, 0)');
+  const glowR = r * 1.9;
+  const glow = ctx.createRadialGradient(p.x, p.y + bob, 0, p.x, p.y + bob, glowR);
+  if (danger) {
+    const a = 0.3 + 0.15 * Math.sin(time / 180 + phase);
+    glow.addColorStop(0, `rgba(235, 45, 45, ${a})`);
+    glow.addColorStop(1, 'rgba(235, 45, 45, 0)');
+  } else {
+    glow.addColorStop(0, 'rgba(255, 240, 190, 0.5)');
+    glow.addColorStop(1, 'rgba(255, 240, 190, 0)');
+  }
   ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.arc(p.x, p.y + bob, r * 1.9, 0, Math.PI * 2);
+  ctx.arc(p.x, p.y + bob, glowR, 0, Math.PI * 2);
   ctx.fill();
 
   // Sombra no chão (não acompanha o pulo do petisco)
@@ -180,29 +523,135 @@ export function drawTreat(ctx: CanvasRenderingContext2D, p: Point, cell: number,
   ctx.fill();
 
   ctx.translate(p.x, p.y + bob);
-  ctx.rotate(-0.45 + Math.sin(time / 520) * 0.2);
+  const sway = Math.sin(time / 520 + phase);
+  ctx.rotate(kind === 'bone' ? -0.45 + sway * 0.2 : sway * 0.12);
 
-  // Ossinho: quatro bolinhas nas pontas + haste
-  ctx.fillStyle = '#f7e6c6';
-  ctx.strokeStyle = '#c29b66';
-  ctx.lineWidth = Math.max(1, cell * 0.045);
-  ctx.lineJoin = 'round';
+  switch (kind) {
+    case 'bone':
+      drawBone(ctx, r, lw);
+      break;
+    case 'beef':
+      drawBeef(ctx, r, lw);
+      break;
+    case 'strawberry':
+      drawStrawberry(ctx, r, lw);
+      break;
+    case 'banana':
+      drawBanana(ctx, r, lw);
+      break;
+    case 'avocado':
+      drawAvocado(ctx, r, lw);
+      break;
+    case 'watermelon':
+      drawWatermelon(ctx, r, lw);
+      break;
+    case 'chocolate':
+      drawChocolate(ctx, r, lw);
+      break;
+    case 'bomb':
+      drawBomb(ctx, r, lw, time);
+      break;
+  }
 
-  const len = r * 1.3;
-  const knob = r * 0.48;
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------- efeitos -- */
+
+/** Marca de queimado no gramado, onde a dinamite estourou. */
+export function drawScorch(ctx: CanvasRenderingContext2D, p: Point, cell: number): void {
+  const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, cell * 1.3);
+  g.addColorStop(0, 'rgba(30, 24, 20, 0.55)');
+  g.addColorStop(0.6, 'rgba(30, 24, 20, 0.25)');
+  g.addColorStop(1, 'rgba(30, 24, 20, 0)');
+  ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.arc(-len / 2, -knob * 0.72, knob, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.arc(-len / 2, knob * 0.72, knob, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.arc(len / 2, -knob * 0.72, knob, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.arc(len / 2, knob * 0.72, knob, 0, Math.PI * 2);
-  ctx.closePath();
-  roundedRect(ctx, -len / 2, -knob * 0.8, len, knob * 1.6, knob * 0.7);
+  ctx.arc(p.x, p.y, cell * 1.3, 0, Math.PI * 2);
   ctx.fill();
-  ctx.stroke();
+}
 
+/** Explosão da dinamite. `elapsed` = ms desde o estouro. */
+export function drawExplosion(ctx: CanvasRenderingContext2D, p: Point, cell: number, elapsed: number): void {
+  const k = Math.min(1, elapsed / 650);
+  if (k >= 1 && elapsed > 1600) return;
+  const ease = 1 - (1 - k) * (1 - k);
+
+  ctx.save();
+
+  // Fumaça que sobe e se desfaz
+  const smokeK = Math.min(1, elapsed / 1600);
+  for (let i = 0; i < 6; i++) {
+    const a = hash(i + 1) * Math.PI * 2;
+    const dist = cell * (0.4 + smokeK * 1.1);
+    ctx.fillStyle = `rgba(70, 66, 70, ${0.4 * (1 - smokeK)})`;
+    ctx.beginPath();
+    ctx.arc(
+      p.x + Math.cos(a) * dist,
+      p.y + Math.sin(a) * dist * 0.6 - smokeK * cell * 1.2,
+      cell * (0.35 + smokeK * 0.5),
+      0,
+      Math.PI * 2,
+    );
+    ctx.fill();
+  }
+
+  if (k < 1) {
+    // Raios de fogo
+    ctx.strokeStyle = `rgba(255, 200, 60, ${1 - k})`;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = cell * 0.12 * (1 - k) + 1;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + hash(i * 3.3) * 0.4;
+      const inner = cell * (0.3 + ease * 1.2);
+      const outer = inner + cell * (0.5 + hash(i * 7.1) * 0.6) * (1 - k * 0.5);
+      ctx.moveTo(p.x + Math.cos(a) * inner, p.y + Math.sin(a) * inner);
+      ctx.lineTo(p.x + Math.cos(a) * outer, p.y + Math.sin(a) * outer);
+    }
+    ctx.stroke();
+
+    // Bola de fogo
+    const radius = cell * (0.4 + ease * 1.8);
+    const fire = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
+    fire.addColorStop(0, `rgba(255, 255, 230, ${1 - k})`);
+    fire.addColorStop(0.35, `rgba(255, 210, 70, ${0.95 * (1 - k)})`);
+    fire.addColorStop(0.7, `rgba(240, 90, 30, ${0.8 * (1 - k)})`);
+    fire.addColorStop(1, 'rgba(200, 40, 20, 0)');
+    ctx.fillStyle = fire;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+/** Texto flutuante ("+2", "Eca!") que sobe e some. `elapsed` em ms. */
+export function drawPopup(
+  ctx: CanvasRenderingContext2D,
+  p: Point,
+  cell: number,
+  text: string,
+  color: string,
+  elapsed: number,
+): void {
+  const k = elapsed / 900;
+  if (k >= 1) return;
+  ctx.save();
+  ctx.globalAlpha = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
+  ctx.font = `800 ${Math.round(cell * 0.62)}px system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(2, cell * 0.12);
+  ctx.strokeStyle = 'rgba(30, 30, 30, 0.8)';
+  const y = p.y - cell * 0.5 - k * cell * 1.1;
+  const scale = k < 0.15 ? 0.6 + (k / 0.15) * 0.4 : 1;
+  ctx.translate(p.x, y);
+  ctx.scale(scale, scale);
+  ctx.strokeText(text, 0, 0);
+  ctx.fillStyle = color;
+  ctx.fillText(text, 0, 0);
   ctx.restore();
 }
 
@@ -352,6 +801,7 @@ function drawHead(
   dead: boolean,
   chomp: number,
   fur: FurPalette,
+  sick: number,
 ): void {
   let dx = head.x - neck.x;
   let dy = head.y - neck.y;
@@ -401,6 +851,14 @@ function drawHead(
   ctx.fill();
   ctx.stroke();
 
+  // Enjoado de chocolate: o rosto fica esverdeado
+  if (sick > 0) {
+    ctx.fillStyle = `rgba(118, 186, 64, ${0.5 * Math.min(1, sick * 1.5)})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 0.95, r * 0.85, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   // Língua de fora ao mastigar
   if (chomp > 0.02) {
     ctx.fillStyle = fur.tongue;
@@ -435,6 +893,26 @@ function drawHead(
       ctx.lineTo(ex - eyeR, ey + eyeR);
       ctx.stroke();
       ctx.restore();
+    } else if (sick > 0.05) {
+      // Olhinhos rodando em espiral: tontura
+      ctx.fillStyle = '#fffdf8';
+      ctx.beginPath();
+      ctx.arc(ex, ey, eyeR * 1.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.save();
+      ctx.strokeStyle = fur.eye;
+      ctx.lineWidth = Math.max(1, r * 0.07);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      const spin = (time / 110) * side;
+      for (let t = 0; t <= Math.PI * 4; t += 0.3) {
+        const rad = (eyeR * 1.1 * t) / (Math.PI * 4);
+        const a = t * side + spin;
+        if (t === 0) ctx.moveTo(ex, ey);
+        else ctx.lineTo(ex + Math.cos(a) * rad, ey + Math.sin(a) * rad);
+      }
+      ctx.stroke();
+      ctx.restore();
     } else {
       ctx.fillStyle = '#fffdf8';
       ctx.beginPath();
@@ -459,6 +937,24 @@ function drawHead(
     ctx.fill();
   }
 
+  // Gota de suor escorrendo pela testa
+  if (sick > 0.05 && !dead) {
+    const drip = ((time / 900) % 1) * r * 0.35;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, sick * 2);
+    ctx.translate(-r * 0.45, -r * 0.95 + drip);
+    ctx.fillStyle = '#8fd3f4';
+    ctx.strokeStyle = '#3a7ea3';
+    ctx.lineWidth = Math.max(1, r * 0.05);
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.24);
+    ctx.quadraticCurveTo(r * 0.16, 0, 0, r * 0.1);
+    ctx.quadraticCurveTo(-r * 0.16, 0, 0, -r * 0.24);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
   ctx.restore();
 }
 
@@ -479,6 +975,8 @@ export interface DogOptions {
   withTail?: boolean;
   /** Paleta de pelagem; usa a padrão quando omitida. */
   fur?: FurPalette;
+  /** Mal-estar do chocolate (0..1): corpo esverdeado e cara de enjoo. */
+  sick?: number;
 }
 
 export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): void {
@@ -494,6 +992,7 @@ export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): vo
     withHead = true,
     withTail = true,
     fur = FUR_PALETTES[DEFAULT_FUR_COLOR],
+    sick = 0,
   } = opts;
 
   if (points.length === 0) return;
@@ -561,10 +1060,15 @@ export function drawOsvaldo(ctx: CanvasRenderingContext2D, opts: DogOptions): vo
     ctx.lineTo(lerp(a.x, b.x, 0.62), lerp(a.y, b.y, 0.62));
     ctx.stroke();
   }
+
+  if (sick > 0) {
+    ctx.fillStyle = `rgba(118, 186, 64, ${0.3 * Math.min(1, sick * 1.5)})`;
+    ctx.fill(innerPath);
+  }
   ctx.restore();
 
   if (withHead) {
     const neck = points.length > 1 ? points[1] : { x: points[0].x - cell, y: points[0].y };
-    drawHead(ctx, points[0], neck, cell, time, dead, chomp, fur);
+    drawHead(ctx, points[0], neck, cell, time, dead, chomp, fur, sick);
   }
 }

@@ -389,6 +389,21 @@ body {
   animation: bump 0.3s ease;
 }
 
+.hud__choco {
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(90, 40, 20, 0.55);
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hud__choco[hidden] {
+  display: none;
+}
+
 .hud__game-name {
   font-size: clamp(0.88rem, 4.2vw, 1.4rem);
   font-weight: 800;
