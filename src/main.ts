@@ -8,6 +8,7 @@ import { Renderer } from './game/renderer';
 import { attachInput } from './game/input';
 import { audio } from './game/audio';
 import { startMascot } from './ui/mascot';
+import { startFurHeads } from './ui/furHeads';
 import { CONFIG, type Direction } from './game/config';
 import { FUR_PALETTES, DEFAULT_FUR_COLOR, type FurColorId } from './game/draw';
 
@@ -66,6 +67,7 @@ let shakeDuration = 0;
 let shakePower = 0;
 let stopMascot: (() => void) | null = null;
 let stopColorMascot: (() => void) | null = null;
+let stopFurHeads: (() => void) | null = null;
 /**
  * Cor escolhida pelo jogador para a partida. Vive só em memória (não é
  * persistida): atualizar a página sempre volta para a escolha padrão, mas
@@ -186,9 +188,12 @@ function showScreen(screen: AppScreen): void {
       $<HTMLCanvasElement>('mascot-color'),
       () => FUR_PALETTES[selectedColorId],
     );
+    stopFurHeads ??= startFurHeads(colorOptions, () => selectedColorId);
   } else {
     stopColorMascot?.();
     stopColorMascot = null;
+    stopFurHeads?.();
+    stopFurHeads = null;
   }
 }
 
