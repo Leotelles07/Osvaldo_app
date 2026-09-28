@@ -294,27 +294,10 @@ body {
   box-shadow: 0 0 0 4px rgba(255, 185, 59, 0.25);
 }
 
-.color-swatch__dot {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid rgba(35, 48, 31, 0.15);
-}
-
-.color-swatch__dot--default {
-  background: radial-gradient(circle at 35% 30%, #efe3d4, #3f3d48 78%);
-}
-
-.color-swatch__dot--preto {
-  background: #1f1f22;
-}
-
-.color-swatch__dot--marrom {
-  background: #6b4526;
-}
-
-.color-swatch__dot--branco {
-  background: #fbf7ec;
+.color-swatch__head {
+  display: block;
+  width: 56px;
+  height: 56px;
 }
 
 .color-swatch__label {
