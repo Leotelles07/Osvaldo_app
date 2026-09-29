@@ -53,7 +53,7 @@
           </form>
 
           <p class="hint">
-            <span class="hint__row"><b>Celular:</b> deslize o dedo na tela para guiar o Osvaldo</span>
+            <span class="hint__row"><b>Celular:</b> toque nas setas ou deslize o dedo na tela</span>
             <span class="hint__row"><b>Computador:</b> use as setas ou W A S D</span>
           </p>
         </div>
@@ -153,6 +153,22 @@
             </div>
           </div>
         </main>
+
+        <!-- Setas de direção (só aparecem em telas de toque) -->
+        <div id="dpad" class="dpad" role="group" aria-label="Setas de direção">
+          <button class="dpad__btn" type="button" data-dir="left" aria-label="Esquerda">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <button class="dpad__btn" type="button" data-dir="up" aria-label="Cima">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7" /></svg>
+          </button>
+          <button class="dpad__btn" type="button" data-dir="down" aria-label="Baixo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" /></svg>
+          </button>
+          <button class="dpad__btn" type="button" data-dir="right" aria-label="Direita">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
 
         <footer class="controls">
           <button id="btn-sound" class="icon-btn" type="button" aria-label="Ligar ou desligar o som">

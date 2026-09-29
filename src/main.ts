@@ -5,11 +5,11 @@
 import './styles.css';
 import { Game, type DeathCause } from './game/core';
 import { Renderer } from './game/renderer';
-import { attachInput } from './game/input';
+import { attachInput, attachDpad } from './game/input';
 import { audio } from './game/audio';
 import { startMascot } from './ui/mascot';
 import { startFurHeads } from './ui/furHeads';
-import { CONFIG, type Direction } from './game/config';
+import { CONFIG, OPPOSITE, type Direction } from './game/config';
 import { FUR_PALETTES, DEFAULT_FUR_COLOR, type FurColorId } from './game/draw';
 
 /* ------------------------------------------------------------- elementos -- */
@@ -46,6 +46,8 @@ const btnAgain = $<HTMLButtonElement>('btn-again');
 const btnChange = $<HTMLButtonElement>('btn-change');
 const btnSound = $<HTMLButtonElement>('btn-sound');
 const soundIcon = $('sound-icon');
+const dpad = $('dpad');
+const dpadButtons = [...dpad.querySelectorAll<HTMLButtonElement>('[data-dir]')];
 
 /* ----------------------------------------------------------------- estado -- */
 
@@ -197,6 +199,27 @@ function showScreen(screen: AppScreen): void {
   }
 }
 
+/** Estado das setas da última atualização: só mexe no DOM quando muda. */
+let dpadState = '';
+
+/**
+ * Setas acompanham o Osvaldo: a direção atual fica em destaque e a meia-volta
+ * aparece apagada, já que o jogo a ignora.
+ */
+function updateDpad(): void {
+  const playing = game.phase === 'running' && !paused;
+  const heading = game.heading;
+  const state = `${heading}:${playing}`;
+  if (state === dpadState) return;
+  dpadState = state;
+  dpad.classList.toggle('is-idle', !playing);
+  for (const button of dpadButtons) {
+    const dir = button.dataset.dir as Direction;
+    button.classList.toggle('is-current', dir === heading);
+    button.setAttribute('aria-disabled', String(dir === OPPOSITE[heading]));
+  }
+}
+
 function hideOverlays(): void {
   overlayCountdown.hidden = true;
   overlayPause.hidden = true;
@@ -325,6 +348,7 @@ function frame(now: number): void {
     const chomp = Math.max(0, 1 - (now - lastEatAt) / 320);
     renderer.render(game, now, { chomp, deathAt });
     applyShake(now);
+    updateDpad();
   }
 
   requestAnimationFrame(frame);
@@ -407,6 +431,14 @@ attachInput(board, {
   isPlaying: () => game.phase === 'running' && !paused,
 });
 
+attachDpad(dpad, {
+  onDirection: (dir: Direction) => {
+    game.turn(dir);
+    updateDpad(); // destaque imediato, sem esperar o próximo quadro
+  },
+  isPlaying: () => game.phase === 'running' && !paused,
+});
+
 // Perdeu o foco (trocou de aba, atendeu o telefone): pausa sozinho.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) togglePause(true);
@@ -436,7 +468,7 @@ if (import.meta.env.DEV) {
 // A dica do rodapé acompanha o aparelho: dedo no celular, teclado no desktop.
 const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
 $('controls-hint').textContent = coarsePointer
-  ? 'Deslize o dedo para guiar o Osvaldo'
+  ? 'Toque nas setas ou deslize o dedo'
   : 'Use as setas ou W A S D';
 
 soundIcon.textContent = audio.muted ? '🔇' : '🔊';
