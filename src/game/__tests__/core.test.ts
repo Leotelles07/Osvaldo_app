@@ -52,6 +52,19 @@ describe('Osvaldo', () => {
     expect(game.body).toHaveLength(before.length);
   });
 
+  it('heading reflete a última curva pedida, antes mesmo do passo', () => {
+    const game = newGame();
+    expect(game.heading).toBe('right');
+    game.turn('up');
+    expect(game.heading).toBe('up');
+    expect(game.direction).toBe('right');
+    game.turn('left');
+    expect(game.heading).toBe('left');
+    step(game, 2);
+    expect(game.direction).toBe('left');
+    expect(game.heading).toBe('left');
+  });
+
   it('ignora a curva de 180 graus (o Osvaldo não se dobra ao meio)', () => {
     const game = newGame();
     game.turn('left');

@@ -135,11 +135,19 @@ export class Game {
   }
 
   /**
+   * Para onde o Osvaldo vai depois de consumir a fila de curvas: a última
+   * direção pedida, ou a atual se não há nenhuma pendente.
+   */
+  get heading(): Direction {
+    return this.queue.length > 0 ? this.queue[this.queue.length - 1] : this.direction;
+  }
+
+  /**
    * Registra uma direção desejada. Curvas de 180 graus são ignoradas —
    * o Osvaldo é comprido, não consegue se dobrar ao meio.
    */
   turn(next: Direction): void {
-    const last = this.queue.length > 0 ? this.queue[this.queue.length - 1] : this.direction;
+    const last = this.heading;
     if (next === last || next === OPPOSITE[last]) return;
     if (this.queue.length >= CONFIG.maxQueuedDirections) return;
     this.queue.push(next);
