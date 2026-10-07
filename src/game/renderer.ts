@@ -4,6 +4,7 @@
  */
 import { CONFIG, type Cell } from './config';
 import type { Game } from './core';
+import { getColorway } from '../brand/colorways';
 import {
   drawArena,
   drawExplosion,
@@ -143,7 +144,8 @@ export class Renderer {
     const { chomp, deathAt } = fx;
     const exploded = game.phase === 'over' && game.deathCause === 'bomb' && game.deathCell;
 
-    drawArena(ctx, this.cssWidth, this.cssHeight, cell);
+    const cw = getColorway();
+    drawArena(ctx, this.cssWidth, this.cssHeight, cell, cw.field, cw.fieldAlt);
     if (exploded) drawScorch(ctx, this.toPixel(game.deathCell!.x, game.deathCell!.y), cell);
     drawTreat(ctx, game.treat.kind, this.toPixel(game.treat.x, game.treat.y), cell, time);
     for (const hazard of game.hazards) {

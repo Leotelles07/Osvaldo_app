@@ -1,23 +1,17 @@
 /* ==========================================================================
-   Osvaldo Game — estilos
-   Mobile-first: tudo dimensionado com dvh + safe-area para caber na tela
-   do celular sem scroll e sem zoom acidental.
-   ========================================================================== */
+   Osvaldo Games — folha de estilo das telas
 
-:root {
-  --grass-1: #3f8f63;
-  --grass-2: #2b6b4f;
-  --grass-deep: #1d4a37;
-  --cream: #fff7e8;
-  --ink: #23301f;
-  --accent: #ffb93b;
-  --accent-dark: #e09215;
-  --danger: #e4572e;
-  --panel: rgba(255, 247, 232, 0.97);
-  --shadow: 0 10px 30px rgba(12, 35, 23, 0.35);
-  --radius: 18px;
-  --font: 'Baloo 2', 'Trebuchet MS', 'Segoe UI', system-ui, -apple-system, sans-serif;
-}
+   Segue o Design System da marca (ver src/styles/tokens.css e
+   DESIGN_SYSTEM.md). Três regras governam tudo aqui:
+
+   1. Contorno preto em tudo. Nenhum elemento sólido fica sem traço --ink.
+   2. Sombra sólida e deslocada, nunca difusa: aspecto de adesivo recortado.
+   3. Texto pequeno nunca fica direto sobre cor de marca — vai dentro de um
+      chip de papel. Laranja e magenta não alcançam 4.5:1 contra os neutros,
+      e a cor da partida é sorteada, então o chip é o que garante leitura.
+
+   Mobile-first: dvh + safe-area, sem rolagem e sem zoom acidental.
+   ========================================================================== */
 
 * {
   box-sizing: border-box;
@@ -33,10 +27,11 @@ body {
 }
 
 body {
-  font-family: var(--font);
+  font-family: var(--font-brand);
+  font-weight: var(--weight-body);
   color: var(--ink);
-  background: radial-gradient(circle at 50% 0%, var(--grass-1), var(--grass-deep) 78%);
-  background-attachment: fixed;
+  background: var(--cw-bg);
+  transition: background var(--t-med) ease;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
@@ -56,206 +51,221 @@ body {
   inset: 0;
   display: none;
   flex-direction: column;
-  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
-    max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  padding: max(var(--space-3), env(safe-area-inset-top))
+    max(var(--space-3), env(safe-area-inset-right))
+    max(var(--space-3), env(safe-area-inset-bottom))
+    max(var(--space-3), env(safe-area-inset-left));
 }
 
 .screen.is-active {
   display: flex;
 }
 
-/* -------------------------------------------------------- tela inicial -- */
-.screen--start {
-  align-items: center;
-  justify-content: center;
-  overflow-y: auto;
-}
-
-.start-card {
-  width: min(430px, 100%);
-  background: var(--panel);
-  border-radius: 26px;
-  box-shadow: var(--shadow);
-  padding: 18px 22px 22px;
-  text-align: center;
-  animation: pop-in 0.45s cubic-bezier(0.18, 1.2, 0.4, 1);
-}
-
-.start-mascot {
-  display: flex;
-  justify-content: center;
-}
-
-.start-mascot canvas {
-  width: 100%;
-  max-width: 300px;
-  height: auto;
-}
-
-.title {
-  margin: 2px 0 6px;
-  line-height: 0.9;
-}
-
-.title__main {
-  display: block;
-  font-size: clamp(2.4rem, 12vw, 3.2rem);
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--grass-2);
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
-}
-
-.title__sub {
-  display: block;
-  font-size: clamp(1rem, 5vw, 1.3rem);
-  font-weight: 700;
-  letter-spacing: 8px;
-  text-transform: uppercase;
-  color: var(--accent-dark);
-}
-
-.tagline {
-  margin: 0 0 16px;
-  font-size: 0.98rem;
-  line-height: 1.35;
-  color: #5b6b57;
-}
-
-.start-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.field__label {
-  display: block;
-  font-size: 0.86rem;
-  font-weight: 700;
-  text-align: left;
-  margin-bottom: 5px;
-  color: #5b6b57;
-}
-
-.field__input {
-  width: 100%;
-  font-family: inherit;
-  font-size: 1.15rem; /* >=16px evita o zoom automático do iOS */
-  font-weight: 700;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 3px solid #e2d6c2;
-  background: #fffdf8;
-  color: var(--ink);
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.field__input::placeholder {
-  color: #bdb3a3;
-  font-weight: 600;
-}
-
-.field__input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(255, 185, 59, 0.25);
-}
-
-.field__input.is-invalid {
-  border-color: var(--danger);
-  animation: shake 0.35s;
-}
-
-/* ---------------------------------------------------------------- botões -- */
-.btn {
-  font-family: inherit;
-  font-size: 1.15rem;
-  font-weight: 800;
-  border: none;
-  border-radius: 14px;
-  padding: 15px 18px;
-  cursor: pointer;
-  transition: transform 0.12s ease, filter 0.15s ease;
-  min-height: 52px; /* alvo de toque confortável para qualquer idade */
-}
-
-.btn:active {
-  transform: translateY(2px) scale(0.99);
-}
-
-.btn--primary {
-  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
-  color: #4a2c00;
-  box-shadow: 0 5px 0 #b87410;
-}
-
-.btn--primary:active {
-  box-shadow: 0 2px 0 #b87410;
-}
-
-.btn--ghost {
-  background: transparent;
-  color: var(--grass-2);
-  border: 3px solid rgba(43, 107, 79, 0.35);
-}
-
-.icon-btn {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 247, 232, 0.22);
-  color: var(--cream);
-  font-size: 1.2rem;
-  line-height: 1;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-.icon-btn:active {
-  transform: scale(0.94);
-}
-
-.hint {
-  margin: 14px 0 0;
-  font-size: 0.82rem;
-  color: #6f7d6a;
-  line-height: 1.5;
-}
-
-.hint__row {
-  display: block;
-}
-
-/* ------------------------------------------------------ tela de cor -- */
+.screen--start,
 .screen--color {
   align-items: center;
   justify-content: center;
   overflow-y: auto;
 }
 
-.color-card {
-  width: min(430px, 100%);
-  background: var(--panel);
-  border-radius: 26px;
-  box-shadow: var(--shadow);
-  padding: 18px 22px 22px;
-  text-align: center;
-  animation: pop-in 0.45s cubic-bezier(0.18, 1.2, 0.4, 1);
+/* ------------------------------------------------------------- cartões -- */
+/* O adesivo: papel, contorno grosso, sombra sólida. Base de toda superfície. */
+.start-card,
+.color-card,
+.panel {
+  background: var(--paper);
+  border: var(--stroke-3) solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  animation: pop-in 0.4s var(--ease-pop);
 }
 
+.start-card,
+.color-card {
+  width: min(430px, 100%);
+  padding: var(--space-5) var(--space-5) var(--space-5);
+  text-align: center;
+}
+
+/* ------------------------------------------------------- marca aplicada -- */
+/* Sprite com o logotipo e o mascote. `display:none` quebraria o <use> em
+   alguns navegadores, então o truque é tirá-lo do fluxo com tamanho zero. */
+.brand-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.brand-title {
+  margin: 0;
+}
+
+.brand-mascot {
+  display: block;
+  width: min(230px, 62%);
+  height: auto;
+  margin: 0 auto var(--space-2);
+  /* O mascote veste a cor da partida (ver colorways.ts) */
+  --mascote-pelo: var(--cw-bg);
+  --mascote-argola: var(--cw-accent);
+  animation: mascot-idle 3.4s ease-in-out infinite;
+}
+
+.brand-logo {
+  display: block;
+  width: min(300px, 86%);
+  height: auto;
+  margin: 0 auto var(--space-3);
+  color: var(--ink); /* o logotipo usa currentColor */
+}
+
+.brand-logo--hud {
+  width: clamp(104px, 30vw, 150px);
+  margin: 0;
+  color: var(--ink);
+}
+
+.tagline {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: 1.35;
+  color: var(--gray-600);
+}
+
+/* -------------------------------------------------------------- campos -- */
+.start-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.field__label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-display);
+  text-align: left;
+  margin-bottom: var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--gray-600);
+}
+
+.field__input {
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--text-lg); /* >=16px evita o zoom automático do iOS */
+  font-weight: var(--weight-display);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--stroke-2) solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  outline: none;
+  transition: box-shadow var(--t-fast) ease;
+}
+
+.field__input::placeholder {
+  color: var(--gray-300);
+  font-weight: var(--weight-bold);
+}
+
+.field__input:focus-visible {
+  box-shadow: 0 0 0 var(--stroke-3) var(--cw-accent);
+}
+
+.field__input.is-invalid {
+  box-shadow: 0 0 0 var(--stroke-3) var(--brand-magenta);
+  animation: shake 0.35s;
+}
+
+/* -------------------------------------------------------------- botões -- */
+.btn {
+  font-family: inherit;
+  /* >= 18.66px em negrito conta como "texto grande" na WCAG, que exige 3:1 em
+     vez de 4.5:1 — é o que permite usar as sete cores de destaque no botão. */
+  font-size: var(--text-xl);
+  font-weight: var(--weight-display);
+  border: var(--stroke-2) solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  min-height: var(--tap-min);
+  cursor: pointer;
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+  transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease;
+}
+
+/* Afundar o botão em vez de escurecer: combina com o aspecto recortado. */
+.btn:active {
+  transform: translateY(4px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.btn--primary {
+  background: var(--cw-accent);
+  color: var(--cw-on-accent);
+}
+
+.btn--ghost {
+  background: var(--paper);
+}
+
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.dpad__btn:focus-visible,
+.color-swatch:focus-visible {
+  outline: var(--stroke-2) solid var(--ink);
+  outline-offset: 3px;
+}
+
+.icon-btn {
+  width: var(--tap-icon);
+  height: var(--tap-icon);
+  border-radius: var(--radius-pill);
+  border: var(--stroke-2) solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--text-lg);
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-1);
+  transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease;
+  flex: none;
+}
+
+.icon-btn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.hint {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--gray-600);
+  line-height: 1.6;
+}
+
+.hint__row {
+  display: block;
+}
+
+/* ------------------------------------------------------- escolha de cor -- */
 .color-title {
-  margin: 4px 0 10px;
-  font-size: clamp(1.3rem, 6vw, 1.7rem);
-  font-weight: 800;
-  color: var(--grass-2);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-display);
+  line-height: 1.05;
+  color: var(--ink);
 }
 
 .color-mascot {
   display: flex;
   justify-content: center;
-  margin-bottom: 8px;
 }
 
 .color-mascot canvas {
@@ -267,90 +277,111 @@ body {
 .color-options {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin: 6px 0 18px;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-4);
 }
 
 .color-swatch {
+  font-family: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 4px;
-  border-radius: 14px;
-  border: 3px solid transparent;
-  background: #fffdf8;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+  border: var(--stroke-2) solid var(--ink);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  box-shadow: var(--shadow-1);
   cursor: pointer;
-  font-family: inherit;
-  transition: border-color 0.15s ease, transform 0.12s ease;
+  transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease,
+    background var(--t-fast) ease;
 }
 
 .color-swatch:active {
-  transform: scale(0.96);
+  transform: translateY(3px);
+  box-shadow: none;
 }
 
+/* Anel em vez de preenchimento: o rótulo continua sobre papel. */
 .color-swatch.is-selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(255, 185, 59, 0.25);
+  box-shadow: var(--shadow-2), inset 0 0 0 var(--stroke-2) var(--cw-accent);
 }
 
 .color-swatch__head {
-  display: block;
-  width: 56px;
-  height: 56px;
+  width: 100%;
+  height: auto;
+  max-width: 56px;
 }
 
 .color-swatch__label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #5b6b57;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-display);
+  color: var(--ink);
 }
 
 /* ----------------------------------------------------------- tela jogo -- */
 .screen--game {
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .hud {
   display: grid;
-  /* minmax(0,…) deixa as laterais encolherem sem empurrar o título do meio */
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
-  color: var(--cream);
+  gap: var(--space-2);
 }
 
 .hud__slot {
   display: flex;
-  flex-direction: column;
   min-width: 0;
-  overflow: hidden;
 }
 
 .hud__slot--left {
-  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .hud__slot--center {
+  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: var(--space-1);
 }
 
 .hud__slot--right {
+  justify-content: flex-end;
+}
+
+/* O chip: garante contraste do texto em qualquer cor sorteada. */
+.hud__chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  background: var(--paper);
+  border: var(--stroke-2) solid var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-1);
+}
+
+.hud__chip--score {
   align-items: flex-end;
 }
 
 .hud__label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 1.5px;
+  font-size: 0.6rem;
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  opacity: 0.7;
+  color: var(--gray-600);
+  line-height: 1.2;
 }
 
 .hud__value {
-  font-size: clamp(0.95rem, 4.2vw, 1.25rem);
-  font-weight: 800;
+  font-size: clamp(0.9rem, 4vw, 1.15rem);
+  font-weight: var(--weight-display);
+  color: var(--ink);
+  line-height: 1.1;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -359,39 +390,26 @@ body {
 
 .hud__value--score {
   font-variant-numeric: tabular-nums;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
-/* "pontos/recorde" ocupa o dobro de dígitos: diminui para não brigar com o título */
 .hud__value--score.is-compact {
-  font-size: clamp(0.78rem, 3.5vw, 1rem);
+  font-size: clamp(0.76rem, 3.4vw, 0.95rem);
   letter-spacing: 0;
 }
 
 .hud__value--score.is-bump {
-  animation: bump 0.3s ease;
+  animation: bump var(--t-med) ease;
 }
 
 .hud__choco {
-  margin-top: 2px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: rgba(90, 40, 20, 0.55);
-  font-size: 0.72rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.hud__choco[hidden] {
-  display: none;
-}
-
-.hud__game-name {
-  font-size: clamp(0.88rem, 4.2vw, 1.4rem);
-  font-weight: 800;
-  color: var(--accent);
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-display);
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--stroke-1) solid var(--ink);
+  border-radius: var(--radius-pill);
+  padding: 1px var(--space-2);
   white-space: nowrap;
 }
 
@@ -405,92 +423,26 @@ body {
 
 #board {
   display: block;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  touch-action: none; /* o dedo guia o Osvaldo, não rola a página */
+  border: var(--stroke-3) solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
 }
 
 .controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 2px 4px;
+  gap: var(--space-2);
 }
 
 .controls__hint {
   margin: 0;
-  font-size: 0.72rem;
-  color: rgba(255, 247, 232, 0.72);
-  text-align: center;
   flex: 1;
-}
-
-/* ------------------------------------------------------ setas (mobile) -- */
-/* Só em telas de toque: no computador o teclado já resolve. */
-.dpad {
-  display: none;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  padding: 4px 2px 6px;
-  touch-action: none; /* sem zoom de toque duplo nem atraso de clique */
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .dpad {
-    display: grid;
-  }
-}
-
-.dpad__btn {
-  height: clamp(56px, 8.5dvh, 72px);
-  border: none;
-  border-radius: var(--radius);
-  background: var(--cream);
-  color: var(--grass-2);
-  box-shadow: 0 5px 0 #d8c9ad;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease, opacity 0.15s ease;
-}
-
-.dpad__btn svg {
-  width: 30px;
-  height: 30px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* Direção atual do Osvaldo */
-.dpad__btn.is-current {
-  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
-  color: #4a2c00;
-  box-shadow: 0 5px 0 #b87410;
-}
-
-/* Meia-volta: o Osvaldo não se dobra ao meio */
-.dpad__btn[aria-disabled='true'] {
-  background: rgba(255, 247, 232, 0.28);
-  color: rgba(255, 247, 232, 0.75);
-  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
-}
-
-.dpad__btn.is-pressed {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 #d8c9ad;
-}
-
-.dpad__btn.is-current.is-pressed {
-  box-shadow: 0 2px 0 #b87410;
-}
-
-.dpad.is-idle .dpad__btn {
-  opacity: 0.6;
+  text-align: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--cw-on-bg);
+  opacity: 0.85;
 }
 
 /* ------------------------------------------------------------ overlays -- */
@@ -499,7 +451,7 @@ body {
   inset: 0;
   display: grid;
   place-items: center;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   z-index: 5;
 }
 
@@ -508,81 +460,85 @@ body {
 }
 
 .overlay--countdown {
-  background: rgba(18, 48, 34, 0.45);
-  backdrop-filter: blur(2px);
+  background: rgba(33, 25, 21, 0.45);
 }
 
 .overlay--panel {
-  background: rgba(18, 48, 34, 0.62);
-  backdrop-filter: blur(3px);
-  padding: 14px;
+  background: rgba(33, 25, 21, 0.62);
+  padding: var(--space-3);
 }
 
 .countdown {
-  font-size: clamp(4rem, 26vw, 8rem);
-  font-weight: 800;
-  color: var(--cream);
-  text-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-display);
+  color: var(--paper);
+  /* Contorno preto feito com sombras: mantém o traço da marca no texto. */
+  text-shadow: 4px 0 0 var(--ink), -4px 0 0 var(--ink), 0 4px 0 var(--ink),
+    0 -4px 0 var(--ink), 3px 3px 0 var(--ink), -3px 3px 0 var(--ink),
+    3px -3px 0 var(--ink), -3px -3px 0 var(--ink), 0 10px 0 var(--ink);
   animation: count-pop 0.6s ease-out;
 }
 
 .countdown.is-go {
-  color: var(--accent);
-  font-size: clamp(3rem, 20vw, 6rem);
+  color: var(--cw-accent);
+  font-size: clamp(2.4rem, 16vw, 5rem);
 }
 
 .panel {
   width: min(360px, 100%);
-  background: var(--panel);
-  border-radius: 22px;
-  box-shadow: var(--shadow);
-  padding: 22px 20px;
+  padding: var(--space-5) var(--space-4);
   text-align: center;
-  animation: pop-in 0.35s cubic-bezier(0.18, 1.2, 0.4, 1);
 }
 
 .panel__title {
-  margin: 0 0 6px;
-  font-size: 1.7rem;
-  color: var(--grass-2);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-display);
+  color: var(--ink);
 }
 
 .panel__text {
-  margin: 0 0 14px;
-  color: #5b6b57;
-  font-size: 0.98rem;
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
   line-height: 1.35;
+  color: var(--gray-600);
 }
 
+/* Superfície neutra: a cor de destaque fica reservada para a ação principal. */
 .scoreline {
-  background: #f0e6d6;
-  border-radius: 14px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
+  background: var(--gray-100);
+  border: var(--stroke-2) solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .scoreline__label {
   display: block;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 1.4px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  color: #8a7c66;
+  color: var(--gray-600);
 }
 
 .scoreline__value {
   display: block;
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-display);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 2px;
-  color: var(--grass-2);
+  letter-spacing: 1px;
+  color: var(--ink);
 }
 
 .badge {
-  margin: 0 0 12px;
-  font-weight: 800;
-  color: var(--accent-dark);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-md);
+  font-weight: var(--weight-display);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--brand-magenta);
   animation: bump 0.6s ease infinite alternate;
 }
 
@@ -593,7 +549,57 @@ body {
 .panel__actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2);
+}
+
+/* --------------------------------------------------- setas (só toque) -- */
+.dpad {
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  touch-action: none; /* sem zoom de toque duplo nem atraso de clique */
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .dpad {
+    display: grid;
+  }
+}
+
+.dpad__btn {
+  height: clamp(54px, 8dvh, 70px);
+  border: var(--stroke-2) solid var(--ink);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease,
+    background var(--t-fast) ease;
+}
+
+.dpad__btn svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dpad__btn:active {
+  transform: translateY(4px);
+  box-shadow: var(--shadow-pressed);
+}
+
+/* Direção atual do Osvaldo */
+.dpad__btn.is-current {
+  background: var(--cw-accent);
 }
 
 /* ---------------------------------------------------------- animações -- */
@@ -636,9 +642,27 @@ body {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+/* O mascote respira, como um adesivo que balança */
+@keyframes mascot-idle {
+  0%,
+  100% {
+    transform: rotate(-2deg) translateY(0);
+  }
+  50% {
+    transform: rotate(2deg) translateY(-6px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -651,9 +675,9 @@ body {
   }
 }
 
-/* Telas largas (desktop): deixa o tabuleiro grande e centralizado */
+/* Telas largas (desktop) */
 @media (min-width: 900px) and (orientation: landscape) {
   .controls__hint {
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
   }
 }

@@ -1,4 +1,4 @@
-# 🌭 Osvaldo Game
+# 🌭 Osvaldo Games
 
 Um jogo no estilo *snake* em que o personagem é o **Osvaldo**, um cachorrinho
 linguiça arlequim (dachshund *dapple*). Ele corre atrás dos petiscos e, a cada
@@ -87,6 +87,30 @@ O jogo fica disponível em `https://leotelles07.github.io/Osvaldo_app/`.
 > [`vite.config.ts`](vite.config.ts)), então a mesma pasta `dist/` funciona
 > servida na raiz de um domínio ou dentro de um subdiretório. Publicar em
 > Vercel, Netlify ou num domínio próprio não exige nenhum ajuste.
+
+---
+
+## Design System
+
+A identidade visual vem do manual de marca do Osvaldo Games. A documentação
+completa está em **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)**, e há uma página
+visual navegável em
+**[/design-system.html](https://leotelles07.github.io/Osvaldo_app/design-system.html)**
+com paleta, tipografia, componentes ao vivo e os assets da marca.
+
+Em resumo:
+
+- **Sete cores, nenhuma principal.** Cada partida sorteia uma combinação de
+  fundo e destaque — duas rodadas seguidas nunca têm a mesma cara.
+- **Contorno preto em tudo, sombra sólida deslocada.** Aspecto de adesivo
+  recortado, igual ao mascote.
+- **Tokens como fonte única da verdade** em
+  [`src/styles/tokens.css`](src/styles/tokens.css). Nenhum valor de cor cru
+  aparece fora dali.
+- **Contraste travado por teste:** o neutro de cada combinação é sempre o de
+  maior contraste, e o campo de jogo mantém a luminância para a qual o Osvaldo
+  foi desenhado.
+
 
 ---
 

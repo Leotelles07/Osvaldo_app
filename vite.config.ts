@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -8,6 +9,13 @@ export default defineConfig({
   build: {
     target: 'es2020',
     assetsInlineLimit: 8192,
+    rollupOptions: {
+      input: {
+        // O jogo e a página do Design System, que compartilham os mesmos tokens.
+        main: resolve(__dirname, 'index.html'),
+        designSystem: resolve(__dirname, 'design-system.html'),
+      },
+    },
   },
   server: {
     // Escuta também na rede local, para abrir o jogo no celular pelo IP da máquina.
