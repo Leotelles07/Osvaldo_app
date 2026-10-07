@@ -9,6 +9,10 @@
  *
  * - `onBg` e `onAccent` são sempre o neutro de maior contraste contra aquela
  *   cor, nunca uma escolha a olho.
+ * - O pelo do mascote (`mascot`) é sempre uma terceira cor, distinta do fundo
+ *   e da argola. É como o manual monta as pranchas: magenta com pelo lima,
+ *   lima com pelo turquesa, turquesa com pelo âmbar. Usar o fundo como pelo
+ *   deixaria o mascote sumir ao ser aplicado sobre o próprio fundo.
  * - `field` não é a cor pura da marca: é o mesmo matiz ajustado para ter a
  *   mesma *luminância relativa* do gramado original (0,464). Igualar a
  *   claridade em HSL não bastaria — o verde carrega muito mais luminância que
@@ -26,6 +30,8 @@ export interface Colorway {
   bg: string;
   /** Cor de destaque: argola do mascote, botão primário, foco. */
   accent: string;
+  /** Pelo do mascote. Sempre diferente do fundo — ver nota acima. */
+  mascot: string;
   /** Texto grande sobre `bg`. Só os dois neutros da marca entram aqui. */
   onBg: string;
   /** Texto e ícones sobre `accent`. */
@@ -40,16 +46,21 @@ const INK = '#211915';
 const PAPER = '#fbfbf7';
 
 export const COLORWAYS: readonly Colorway[] = [
-  { name: 'lime',    label: 'Lima',     bg: '#cae21e', accent: '#dd4919', onBg: INK,   onAccent: INK,   field: '#b1bd5c', fieldAlt: '#a6b249' },
-  { name: 'magenta', label: 'Magenta',  bg: '#db016b', accent: '#967dce', onBg: PAPER, onAccent: INK,   field: '#dba7c0', fieldAlt: '#d69ab7' },
-  { name: 'teal',    label: 'Turquesa', bg: '#69bbc6', accent: '#db016b', onBg: INK,   onAccent: PAPER, field: '#7cc0ca', fieldAlt: '#6ab7c2' },
-  { name: 'purple',  label: 'Roxo',     bg: '#967dce', accent: '#e8e842', onBg: INK,   onAccent: INK,   field: '#bdafde', fieldAlt: '#b4a3d9' },
-  { name: 'orange',  label: 'Laranja',  bg: '#dd4919', accent: '#69bbc6', onBg: INK,   onAccent: INK,   field: '#d7ac9d', fieldAlt: '#d1a090' },
-  { name: 'amber',   label: 'Âmbar',    bg: '#e39b25', accent: '#967dce', onBg: INK,   onAccent: INK,   field: '#cdb284', fieldAlt: '#c6a673' },
-  { name: 'yellow',  label: 'Amarelo',  bg: '#e8e842', accent: '#db016b', onBg: INK,   onAccent: PAPER, field: '#bbbb57', fieldAlt: '#b0b148' },
+  // As três primeiras são as pranchas do manual, com as cores exatas dele.
+  { name: 'magenta', label: 'Magenta',  bg: '#db016b', accent: '#967dce', mascot: '#cae21e', onBg: PAPER, onAccent: INK,   field: '#dba7c0', fieldAlt: '#d69ab7' },
+  { name: 'lime',    label: 'Lima',     bg: '#cae21e', accent: '#dd4919', mascot: '#69bbc6', onBg: INK,   onAccent: INK,   field: '#b1bd5c', fieldAlt: '#a6b249' },
+  { name: 'teal',    label: 'Turquesa', bg: '#69bbc6', accent: '#db016b', mascot: '#e39b25', onBg: INK,   onAccent: PAPER, field: '#7cc0ca', fieldAlt: '#6ab7c2' },
+  // As quatro restantes seguem a mesma lógica, com cores da própria paleta.
+  { name: 'purple',  label: 'Roxo',     bg: '#967dce', accent: '#e8e842', mascot: '#cae21e', onBg: INK,   onAccent: INK,   field: '#bdafde', fieldAlt: '#b4a3d9' },
+  { name: 'orange',  label: 'Laranja',  bg: '#dd4919', accent: '#69bbc6', mascot: '#e8e842', onBg: INK,   onAccent: INK,   field: '#d7ac9d', fieldAlt: '#d1a090' },
+  { name: 'amber',   label: 'Âmbar',    bg: '#e39b25', accent: '#967dce', mascot: '#69bbc6', onBg: INK,   onAccent: INK,   field: '#cdb284', fieldAlt: '#c6a673' },
+  { name: 'yellow',  label: 'Amarelo',  bg: '#e8e842', accent: '#db016b', mascot: '#69bbc6', onBg: INK,   onAccent: PAPER, field: '#bbbb57', fieldAlt: '#b0b148' },
 ] as const;
 
-/** Combinação usada no ícone, no manifest e antes do primeiro sorteio. */
+/**
+ * Combinação oficial: é a do ícone e do manifest, e a que a tela inicial veste
+ * antes do primeiro sorteio. Mudar o ícone significa mudar isto junto.
+ */
 export const DEFAULT_COLORWAY = COLORWAYS[0];
 
 let current: Colorway = DEFAULT_COLORWAY;
@@ -72,6 +83,7 @@ export function colorwayCssVars(colorway: Colorway): Record<string, string> {
   return {
     '--cw-bg': colorway.bg,
     '--cw-accent': colorway.accent,
+    '--cw-mascot': colorway.mascot,
     '--cw-on-bg': colorway.onBg,
     '--cw-on-accent': colorway.onAccent,
     '--cw-field': colorway.field,

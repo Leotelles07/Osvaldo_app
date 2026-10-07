@@ -82,7 +82,8 @@ function montarCombinacoes(): void {
     return `
       <button class="ds-cw" type="button" data-colorway="${c.name}" style="background:${c.bg}">
         <span class="ds-cw__name" style="color:${c.onBg}">${c.label}</span>
-        <span class="ds-cw__bars">
+        <span class="ds-cw__bars" title="pelo · argola · campo · xadrez">
+          <span style="background:${c.mascot}"></span>
           <span style="background:${c.accent}"></span>
           <span style="background:${c.field}"></span>
           <span style="background:${c.fieldAlt}"></span>

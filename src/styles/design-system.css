@@ -289,7 +289,7 @@
 
 /* O mascote tokenizado veste a combinação selecionada */
 .ds-asset__img--live {
-  --mascote-pelo: var(--cw-bg);
+  --mascote-pelo: var(--cw-mascot);
   --mascote-argola: var(--cw-accent);
 }
 

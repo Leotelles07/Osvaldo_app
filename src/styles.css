@@ -107,7 +107,7 @@ body {
   height: auto;
   margin: 0 auto var(--space-2);
   /* O mascote veste a cor da partida (ver colorways.ts) */
-  --mascote-pelo: var(--cw-bg);
+  --mascote-pelo: var(--cw-mascot);
   --mascote-argola: var(--cw-accent);
   animation: mascot-idle 3.4s ease-in-out infinite;
 }
