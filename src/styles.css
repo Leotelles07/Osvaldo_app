@@ -228,6 +228,84 @@ body {
   display: block;
 }
 
+/* ------------------------------------------------------ tela de cor -- */
+.screen--color {
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.color-card {
+  width: min(430px, 100%);
+  background: var(--panel);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  padding: 18px 22px 22px;
+  text-align: center;
+  animation: pop-in 0.45s cubic-bezier(0.18, 1.2, 0.4, 1);
+}
+
+.color-title {
+  margin: 4px 0 10px;
+  font-size: clamp(1.3rem, 6vw, 1.7rem);
+  font-weight: 800;
+  color: var(--grass-2);
+}
+
+.color-mascot {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.color-mascot canvas {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+.color-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 6px 0 18px;
+}
+
+.color-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px;
+  border-radius: 14px;
+  border: 3px solid transparent;
+  background: #fffdf8;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+
+.color-swatch:active {
+  transform: scale(0.96);
+}
+
+.color-swatch.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(255, 185, 59, 0.25);
+}
+
+.color-swatch__head {
+  display: block;
+  width: 56px;
+  height: 56px;
+}
+
+.color-swatch__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #5b6b57;
+}
+
 /* ----------------------------------------------------------- tela jogo -- */
 .screen--game {
   gap: 8px;
@@ -294,6 +372,21 @@ body {
   animation: bump 0.3s ease;
 }
 
+.hud__choco {
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(90, 40, 20, 0.55);
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hud__choco[hidden] {
+  display: none;
+}
+
 .hud__game-name {
   font-size: clamp(0.88rem, 4.2vw, 1.4rem);
   font-weight: 800;
@@ -331,6 +424,73 @@ body {
   color: rgba(255, 247, 232, 0.72);
   text-align: center;
   flex: 1;
+}
+
+/* ------------------------------------------------------ setas (mobile) -- */
+/* Só em telas de toque: no computador o teclado já resolve. */
+.dpad {
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 4px 2px 6px;
+  touch-action: none; /* sem zoom de toque duplo nem atraso de clique */
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .dpad {
+    display: grid;
+  }
+}
+
+.dpad__btn {
+  height: clamp(56px, 8.5dvh, 72px);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--cream);
+  color: var(--grass-2);
+  box-shadow: 0 5px 0 #d8c9ad;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease, opacity 0.15s ease;
+}
+
+.dpad__btn svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Direção atual do Osvaldo */
+.dpad__btn.is-current {
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+  color: #4a2c00;
+  box-shadow: 0 5px 0 #b87410;
+}
+
+/* Meia-volta: o Osvaldo não se dobra ao meio */
+.dpad__btn[aria-disabled='true'] {
+  background: rgba(255, 247, 232, 0.28);
+  color: rgba(255, 247, 232, 0.75);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+}
+
+.dpad__btn.is-pressed {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #d8c9ad;
+}
+
+.dpad__btn.is-current.is-pressed {
+  box-shadow: 0 2px 0 #b87410;
+}
+
+.dpad.is-idle .dpad__btn {
+  opacity: 0.6;
 }
 
 /* ------------------------------------------------------------ overlays -- */

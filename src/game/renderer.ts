@@ -2,12 +2,41 @@
  * Liga o estado do jogo ao canvas: cuida do dimensionamento (DPR), converte
  * células em pixels e resolve a travessia das bordas.
  */
-import { CONFIG } from './config';
+import { CONFIG, type Cell } from './config';
 import type { Game } from './core';
-import { drawArena, drawOsvaldo, drawTreat, lerp, type Point } from './draw';
+import {
+  drawArena,
+  drawExplosion,
+  drawOsvaldo,
+  drawPopup,
+  drawScorch,
+  drawTreat,
+  lerp,
+  FUR_PALETTES,
+  DEFAULT_FUR_COLOR,
+  type FurColorId,
+  type Point,
+} from './draw';
 
 /** Distância (em células) acima da qual dois segmentos vizinhos estão "quebrados" pela borda. */
 const BREAK_DISTANCE = 1.6;
+
+/** Quanto tempo um texto flutuante ("+2", "Eca!") fica na tela. */
+const POPUP_MS = 900;
+
+interface Popup {
+  cell: Cell;
+  text: string;
+  color: string;
+  at: number;
+}
+
+export interface RenderEffects {
+  /** 0..1: força da mastigada (língua de fora). */
+  chomp: number;
+  /** Instante (performance.now) em que a partida acabou, se acabou. */
+  deathAt: number | null;
+}
 
 export class Renderer {
   readonly canvas: HTMLCanvasElement;
@@ -15,12 +44,28 @@ export class Renderer {
   cell = 20;
   private cssWidth = 0;
   private cssHeight = 0;
+  private fur = FUR_PALETTES[DEFAULT_FUR_COLOR];
+  private popups: Popup[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('Canvas 2D não está disponível neste navegador.');
     this.ctx = ctx;
+  }
+
+  /** Define a cor do Osvaldo usada nas próximas renderizações. */
+  setFurColor(colorId: FurColorId): void {
+    this.fur = FUR_PALETTES[colorId];
+  }
+
+  /** Mostra um texto flutuante saindo de uma célula do tabuleiro. */
+  addPopup(cell: Cell, text: string, color: string, time: number): void {
+    this.popups.push({ cell: { ...cell }, text, color, at: time });
+  }
+
+  clearPopups(): void {
+    this.popups = [];
   }
 
   /**
@@ -92,12 +137,18 @@ export class Renderer {
     return pts[0] ?? this.toPixel(0, 0);
   }
 
-  render(game: Game, time: number, chomp: number): void {
+  render(game: Game, time: number, fx: RenderEffects): void {
     const ctx = this.ctx;
     const cell = this.cell;
+    const { chomp, deathAt } = fx;
+    const exploded = game.phase === 'over' && game.deathCause === 'bomb' && game.deathCell;
 
     drawArena(ctx, this.cssWidth, this.cssHeight, cell);
-    drawTreat(ctx, this.toPixel(game.treat.x, game.treat.y), cell, time);
+    if (exploded) drawScorch(ctx, this.toPixel(game.deathCell!.x, game.deathCell!.y), cell);
+    drawTreat(ctx, game.treat.kind, this.toPixel(game.treat.x, game.treat.y), cell, time);
+    for (const hazard of game.hazards) {
+      drawTreat(ctx, hazard.kind, this.toPixel(hazard.x, hazard.y), cell, time);
+    }
 
     const points = this.interpolated(game);
 
@@ -118,6 +169,8 @@ export class Renderer {
 
     const dead = game.phase === 'over';
     const moving = game.phase === 'running';
+    // Quem morreu de chocolate fica verde de vez.
+    const sick = dead && game.deathCause === 'chocolate' ? 1 : game.sickness;
 
     for (const run of runs) {
       const draws: Array<{ dx: number; dy: number }> = [{ dx: 0, dy: 0 }];
@@ -144,9 +197,20 @@ export class Renderer {
           moving,
           withHead: run.offset === 0,
           withTail: run.offset + run.points.length === points.length,
+          fur: this.fur,
+          sick,
         });
         ctx.restore();
       }
+    }
+
+    if (exploded && deathAt !== null) {
+      drawExplosion(ctx, this.toPixel(game.deathCell!.x, game.deathCell!.y), cell, time - deathAt);
+    }
+
+    this.popups = this.popups.filter((p) => time - p.at < POPUP_MS);
+    for (const p of this.popups) {
+      drawPopup(ctx, this.toPixel(p.cell.x, p.cell.y), cell, p.text, p.color, time - p.at);
     }
   }
 }

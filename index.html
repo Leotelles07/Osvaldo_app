@@ -30,7 +30,7 @@
             <span class="title__main">Osvaldo</span>
             <span class="title__sub">Game</span>
           </h1>
-          <p class="tagline">Corra atrás dos petiscos.<br />Mas cuidado com o próprio rabo!</p>
+          <p class="tagline">Corra atrás dos petiscos.<br />Mas cuidado com o rabo, o chocolate e a dinamite!</p>
 
           <form id="start-form" class="start-form" autocomplete="off">
             <label class="field">
@@ -53,9 +53,47 @@
           </form>
 
           <p class="hint">
-            <span class="hint__row"><b>Celular:</b> deslize o dedo na tela para guiar o Osvaldo</span>
+            <span class="hint__row"><b>Celular:</b> toque nas setas ou deslize o dedo na tela</span>
             <span class="hint__row"><b>Computador:</b> use as setas ou W A S D</span>
           </p>
+        </div>
+      </section>
+
+      <!-- ================= TELA DE ESCOLHA DE COR ================= -->
+      <section id="screen-color" class="screen screen--color">
+        <div class="color-card">
+          <h1 class="color-title">Escolha a cor do Osvaldo</h1>
+
+          <div class="color-mascot">
+            <canvas id="mascot-color" width="320" height="180" aria-hidden="true"></canvas>
+          </div>
+
+          <div id="color-options" class="color-options" role="radiogroup" aria-label="Cor do Osvaldo">
+            <button
+              class="color-swatch is-selected"
+              type="button"
+              data-color="default"
+              role="radio"
+              aria-checked="true"
+            >
+              <canvas class="color-swatch__head" data-color="default" width="64" height="64" aria-hidden="true"></canvas>
+              <span class="color-swatch__label">Padrão</span>
+            </button>
+            <button class="color-swatch" type="button" data-color="preto" role="radio" aria-checked="false">
+              <canvas class="color-swatch__head" data-color="preto" width="64" height="64" aria-hidden="true"></canvas>
+              <span class="color-swatch__label">Preto</span>
+            </button>
+            <button class="color-swatch" type="button" data-color="marrom" role="radio" aria-checked="false">
+              <canvas class="color-swatch__head" data-color="marrom" width="64" height="64" aria-hidden="true"></canvas>
+              <span class="color-swatch__label">Marrom</span>
+            </button>
+            <button class="color-swatch" type="button" data-color="branco" role="radio" aria-checked="false">
+              <canvas class="color-swatch__head" data-color="branco" width="64" height="64" aria-hidden="true"></canvas>
+              <span class="color-swatch__label">Branco</span>
+            </button>
+          </div>
+
+          <button id="btn-confirm-color" class="btn btn--primary" type="button">Confirmar cor</button>
         </div>
       </section>
 
@@ -68,6 +106,7 @@
           </div>
           <div class="hud__slot hud__slot--center">
             <span class="hud__game-name">Osvaldo Game</span>
+            <span id="hud-choco" class="hud__choco" hidden>🍫 0/3</span>
           </div>
           <div class="hud__slot hud__slot--right">
             <span class="hud__label">Pontos</span>
@@ -114,6 +153,22 @@
             </div>
           </div>
         </main>
+
+        <!-- Setas de direção (só aparecem em telas de toque) -->
+        <div id="dpad" class="dpad" role="group" aria-label="Setas de direção">
+          <button class="dpad__btn" type="button" data-dir="left" aria-label="Esquerda">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <button class="dpad__btn" type="button" data-dir="up" aria-label="Cima">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7" /></svg>
+          </button>
+          <button class="dpad__btn" type="button" data-dir="down" aria-label="Baixo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" /></svg>
+          </button>
+          <button class="dpad__btn" type="button" data-dir="right" aria-label="Direita">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
 
         <footer class="controls">
           <button id="btn-sound" class="icon-btn" type="button" aria-label="Ligar ou desligar o som">

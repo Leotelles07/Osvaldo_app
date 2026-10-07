@@ -3,12 +3,14 @@
  * Junta telas, contagem regressiva, loop de animação, HUD e controles.
  */
 import './styles.css';
-import { Game } from './game/core';
+import { Game, type DeathCause } from './game/core';
 import { Renderer } from './game/renderer';
-import { attachInput } from './game/input';
+import { attachInput, attachDpad } from './game/input';
 import { audio } from './game/audio';
 import { startMascot } from './ui/mascot';
-import type { Direction } from './game/config';
+import { startFurHeads } from './ui/furHeads';
+import { CONFIG, OPPOSITE, type Direction } from './game/config';
+import { FUR_PALETTES, DEFAULT_FUR_COLOR, type FurColorId } from './game/draw';
 
 /* ------------------------------------------------------------- elementos -- */
 
@@ -19,13 +21,17 @@ const $ = <T extends HTMLElement>(id: string): T => {
 };
 
 const screenStart = $('screen-start');
+const screenColor = $('screen-color');
 const screenGame = $('screen-game');
 const nameInput = $<HTMLInputElement>('player-name');
 const startForm = $<HTMLFormElement>('start-form');
+const colorOptions = $('color-options');
+const btnConfirmColor = $<HTMLButtonElement>('btn-confirm-color');
 const stage = $('stage');
 const board = $<HTMLCanvasElement>('board');
 const hudPlayer = $('hud-player');
 const hudScore = $('hud-score');
+const hudChoco = $('hud-choco');
 const overlayCountdown = $('overlay-countdown');
 const countdownText = $('countdown-text');
 const overlayPause = $('overlay-pause');
@@ -40,10 +46,12 @@ const btnAgain = $<HTMLButtonElement>('btn-again');
 const btnChange = $<HTMLButtonElement>('btn-change');
 const btnSound = $<HTMLButtonElement>('btn-sound');
 const soundIcon = $('sound-icon');
+const dpad = $('dpad');
+const dpadButtons = [...dpad.querySelectorAll<HTMLButtonElement>('[data-dir]')];
 
 /* ----------------------------------------------------------------- estado -- */
 
-type AppScreen = 'start' | 'game';
+type AppScreen = 'start' | 'color' | 'game';
 
 const NAME_KEY = 'osvaldo:player';
 const MAX_NAME = 14;
@@ -54,20 +62,56 @@ let sessionRecord = 0;
 let paused = false;
 let countdownTimer: number | null = null;
 let lastEatAt = -Infinity;
+let deathAt: number | null = null;
+/** Tremida da tela: quando começou, quanto dura e com que força (px). */
+let shakeStart = -Infinity;
+let shakeDuration = 0;
+let shakePower = 0;
 let stopMascot: (() => void) | null = null;
+let stopColorMascot: (() => void) | null = null;
+let stopFurHeads: (() => void) | null = null;
+/**
+ * Cor escolhida pelo jogador para a partida. Vive só em memória (não é
+ * persistida): atualizar a página sempre volta para a escolha padrão, mas
+ * "jogar de novo" na mesma sessão mantém a cor já confirmada.
+ */
+let selectedColorId: FurColorId = DEFAULT_FUR_COLOR;
 
 const renderer = new Renderer(board);
 const game = new Game({
-  onEat: (score) => {
-    lastEatAt = performance.now();
-    audio.play('eat');
+  onEat: (score, treat, points) => {
+    const now = performance.now();
+    lastEatAt = now;
+    audio.play(points > 1 ? 'bigEat' : 'eat');
     vibrate(12);
     updateScore(score, true);
+    renderer.addPopup(treat, `+${points}`, '#ffe28a', now);
   },
-  onDeath: (score) => {
-    audio.play('death');
-    vibrate([24, 60, 90]);
-    window.setTimeout(() => showGameOver(score), 550);
+  onSick: (count, at) => {
+    const now = performance.now();
+    lastEatAt = now;
+    audio.play('sick');
+    vibrate([40, 40, 40, 40, 40]);
+    startShake(7, 700);
+    updateChocolates(count);
+    renderer.addPopup(at, 'Eca!', '#b6f07a', now);
+  },
+  onDeath: (score, cause) => {
+    deathAt = performance.now();
+    if (cause === 'bomb') {
+      audio.play('boom');
+      vibrate([120, 40, 200]);
+      startShake(12, 800);
+    } else {
+      audio.play('death');
+      vibrate([24, 60, 90]);
+    }
+    if (cause === 'chocolate') {
+      updateChocolates(game.chocolates);
+      startShake(7, 600);
+    }
+    const delay = cause === 'bomb' ? 1150 : cause === 'chocolate' ? 800 : 550;
+    window.setTimeout(() => showGameOver(score, cause), delay);
   },
 });
 
@@ -93,14 +137,86 @@ function updateScore(score: number, bump = false): void {
   hudScore.classList.add('is-bump');
 }
 
+/** Quantos chocolates o Osvaldo já comeu; some quando ele está limpo. */
+function updateChocolates(count: number): void {
+  hudChoco.hidden = count === 0;
+  hudChoco.textContent = `🍫 ${count}/${CONFIG.chocolateLimit}`;
+  hudChoco.setAttribute('aria-label', `Chocolates comidos: ${count} de ${CONFIG.chocolateLimit}`);
+}
+
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+function startShake(power: number, duration: number): void {
+  shakeStart = performance.now();
+  shakeDuration = duration;
+  shakePower = power;
+}
+
+/**
+ * Treme o tabuleiro: um tranco forte ao comer chocolate/explodir e uma
+ * tremedeira leve enquanto o Osvaldo ainda está enjoado.
+ */
+function applyShake(now: number): void {
+  let amp = 0;
+  const k = (now - shakeStart) / shakeDuration;
+  if (k >= 0 && k < 1) amp = shakePower * (1 - k);
+  if (game.phase === 'running' && !paused) amp = Math.max(amp, game.sickness * 2.5);
+  if (reducedMotion) amp = 0;
+
+  if (amp < 0.1) {
+    if (board.style.transform) board.style.transform = '';
+    return;
+  }
+  const x = Math.sin(now / 23) * amp;
+  const y = Math.cos(now / 31) * amp * 0.6;
+  const rot = Math.sin(now / 47) * amp * 0.12;
+  board.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${rot.toFixed(2)}deg)`;
+}
+
 function showScreen(screen: AppScreen): void {
   screenStart.classList.toggle('is-active', screen === 'start');
+  screenColor.classList.toggle('is-active', screen === 'color');
   screenGame.classList.toggle('is-active', screen === 'game');
+
   if (screen === 'start') {
     stopMascot ??= startMascot($<HTMLCanvasElement>('mascot'));
   } else {
     stopMascot?.();
     stopMascot = null;
+  }
+
+  if (screen === 'color') {
+    stopColorMascot ??= startMascot(
+      $<HTMLCanvasElement>('mascot-color'),
+      () => FUR_PALETTES[selectedColorId],
+    );
+    stopFurHeads ??= startFurHeads(colorOptions, () => selectedColorId);
+  } else {
+    stopColorMascot?.();
+    stopColorMascot = null;
+    stopFurHeads?.();
+    stopFurHeads = null;
+  }
+}
+
+/** Estado das setas da última atualização: só mexe no DOM quando muda. */
+let dpadState = '';
+
+/**
+ * Setas acompanham o Osvaldo: a direção atual fica em destaque e a meia-volta
+ * aparece apagada, já que o jogo a ignora.
+ */
+function updateDpad(): void {
+  const playing = game.phase === 'running' && !paused;
+  const heading = game.heading;
+  const state = `${heading}:${playing}`;
+  if (state === dpadState) return;
+  dpadState = state;
+  dpad.classList.toggle('is-idle', !playing);
+  for (const button of dpadButtons) {
+    const dir = button.dataset.dir as Direction;
+    button.classList.toggle('is-current', dir === heading);
+    button.setAttribute('aria-disabled', String(dir === OPPOSITE[heading]));
   }
 }
 
@@ -127,8 +243,12 @@ function beginRound(): void {
   hideOverlays();
   paused = false;
   lastEatAt = -Infinity;
+  deathAt = null;
+  shakeStart = -Infinity;
   game.reset();
+  renderer.clearPopups();
   updateScore(0);
+  updateChocolates(0);
   fitBoard();
   runCountdown();
 }
@@ -168,7 +288,23 @@ function cancelCountdown(): void {
   overlayCountdown.hidden = true;
 }
 
-function showGameOver(score: number): void {
+function gameOverMessage(score: number, cause: DeathCause): string {
+  const pts = `${score} ${score === 1 ? 'ponto' : 'pontos'}`;
+  switch (cause) {
+    case 'bomb':
+      return `Bum! O Osvaldo mordeu uma dinamite com ${pts}. Fique longe das bombas!`;
+    case 'chocolate':
+      return `O Osvaldo comeu ${CONFIG.chocolateLimit} chocolates e passou muito mal. Chocolate faz mal para cachorro!`;
+    case 'wall':
+      return `O Osvaldo bateu na cerca com ${pts}.`;
+    case 'tail':
+      return score === 0
+        ? 'O Osvaldo se enrolou logo de cara. Bora de novo!'
+        : `O Osvaldo mordeu o próprio rabo com ${pts}.`;
+  }
+}
+
+function showGameOver(score: number, cause: DeathCause): void {
   const isRecord = score > sessionRecord;
   if (isRecord) sessionRecord = score;
 
@@ -177,10 +313,7 @@ function showGameOver(score: number): void {
   hudScore.textContent = line; // formato pedido: pontos/recorde da sessão
   hudScore.classList.add('is-compact');
   gameOverBadge.hidden = !isRecord || score === 0;
-  gameOverText.textContent =
-    score === 0
-      ? 'O Osvaldo se enrolou logo de cara. Bora de novo!'
-      : `O Osvaldo mordeu o próprio rabo depois de ${score} ${score === 1 ? 'petisco' : 'petiscos'}.`;
+  gameOverText.textContent = gameOverMessage(score, cause);
   if (isRecord && score > 0) audio.play('record');
   overlayGameOver.hidden = false;
 }
@@ -213,7 +346,9 @@ function frame(now: number): void {
   if (screenGame.classList.contains('is-active')) {
     if (!paused) game.update(delta);
     const chomp = Math.max(0, 1 - (now - lastEatAt) / 320);
-    renderer.render(game, now, chomp);
+    renderer.render(game, now, { chomp, deathAt });
+    applyShake(now);
+    updateDpad();
   }
 
   requestAnimationFrame(frame);
@@ -243,6 +378,25 @@ startForm.addEventListener('submit', (event) => {
   }
 
   nameInput.blur(); // fecha o teclado do celular antes de começar
+  showScreen('color');
+});
+
+colorOptions.addEventListener('click', (event) => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.color-swatch');
+  if (!button) return;
+  const colorId = button.dataset.color as FurColorId | undefined;
+  if (!colorId || !(colorId in FUR_PALETTES)) return;
+
+  selectedColorId = colorId;
+  for (const swatch of colorOptions.querySelectorAll<HTMLButtonElement>('.color-swatch')) {
+    const isSelected = swatch === button;
+    swatch.classList.toggle('is-selected', isSelected);
+    swatch.setAttribute('aria-checked', String(isSelected));
+  }
+});
+
+btnConfirmColor.addEventListener('click', () => {
+  renderer.setFurColor(selectedColorId);
   showScreen('game');
   beginRound();
 });
@@ -277,6 +431,14 @@ attachInput(board, {
   isPlaying: () => game.phase === 'running' && !paused,
 });
 
+attachDpad(dpad, {
+  onDirection: (dir: Direction) => {
+    game.turn(dir);
+    updateDpad(); // destaque imediato, sem esperar o próximo quadro
+  },
+  isPlaying: () => game.phase === 'running' && !paused,
+});
+
 // Perdeu o foco (trocou de aba, atendeu o telefone): pausa sozinho.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) togglePause(true);
@@ -306,7 +468,7 @@ if (import.meta.env.DEV) {
 // A dica do rodapé acompanha o aparelho: dedo no celular, teclado no desktop.
 const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
 $('controls-hint').textContent = coarsePointer
-  ? 'Deslize o dedo para guiar o Osvaldo'
+  ? 'Toque nas setas ou deslize o dedo'
   : 'Use as setas ou W A S D';
 
 soundIcon.textContent = audio.muted ? '🔇' : '🔊';

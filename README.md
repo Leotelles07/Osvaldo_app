@@ -2,7 +2,8 @@
 
 Um jogo no estilo *snake* em que o personagem é o **Osvaldo**, um cachorrinho
 linguiça arlequim (dachshund *dapple*). Ele corre atrás dos petiscos e, a cada
-um que come, fica mais comprido e mais rápido — até morder o próprio rabo.
+um que come, fica mais comprido e mais rápido — até morder o próprio rabo, comer
+chocolate demais ou abocanhar uma dinamite.
 
 Feito para ser aberto por um link e jogado no **celular** (guiando o Osvaldo com
 o dedo) ou no **computador** (setas ou W A S D).
@@ -16,8 +17,23 @@ o dedo) ou no **computador** (setas ou W A S D).
 | Celular / tablet | Arraste o dedo na tela. O Osvaldo vira na direção do seu dedo — dá para "puxar" ele até o petisco. Um deslize rápido também funciona. |
 | Computador | Setas ou `W` `A` `S` `D`. `Espaço`, `P` ou `Esc` pausam. |
 
-- Cada petisco vale **1 ponto**, aumenta o corpo em 1 segmento e acelera o jogo.
-- A **única** forma de perder é morder o próprio corpo. As bordas do gramado são
+- Sempre há **um petisco bom** no gramado. Todos aumentam o corpo em 1 segmento
+  e aceleram o jogo, mas valem pontos diferentes:
+
+  | Petisco | Pontos |
+  | --- | --- |
+  | 🦴 Ossinho, 🍓 morango, 🍌 banana, 🥑 abacate | 1 |
+  | 🥩 Carne | 2 |
+  | 🍉 Melancia (mais rara) | 3 |
+
+- A partir de alguns pontos surgem **petiscos perigosos** (com uma aura
+  vermelha). Eles ficam no gramado até serem comidos ou até o Osvaldo comer o
+  próximo petisco bom:
+  - 🍫 **Chocolate** — faz mal para cachorro. No 1º e no 2º o Osvaldo passa mal
+    por alguns segundos: a tela treme, ele fica verde, tonto e mais lento. No
+    **3º chocolate** a partida acaba. O contador aparece no topo da tela.
+  - 🧨 **Dinamite** — surge mais adiante na partida e encerra o jogo na hora.
+- Também perde quem morder o próprio corpo. As bordas do gramado são
   atravessáveis: sai de um lado, entra do outro.
 - Ao perder, o placar aparece como `PONTOS/RECORDE` (ex.: `0007/0012`), sendo o
   recorde o melhor resultado daquele jogador na sessão.
@@ -96,7 +112,7 @@ src/
 │   ├── config.ts        Balanceamento: velocidade, crescimento, tamanho do tabuleiro
 │   ├── core.ts          Regras do jogo — sem canvas, sem DOM, determinístico
 │   ├── renderer.ts      Estado do jogo → pixels (DPR, travessia de bordas)
-│   ├── draw.ts          Desenho do Osvaldo, do petisco e do gramado
+│   ├── draw.ts          Desenho do Osvaldo, dos petiscos, das explosões e do gramado
 │   ├── input.ts         Teclado e toque → direções
 │   ├── audio.ts         Efeitos sonoros
 │   └── __tests__/       Testes das regras
@@ -166,10 +182,16 @@ Quase todo o balanceamento está em [`src/game/config.ts`](src/game/config.ts):
 | `minStepMs` | Piso de velocidade: o mais rápido que o jogo chega |
 | `speedUpPerTreat` | Quanto acelera a cada petisco |
 | `startLength` / `growPerTreat` | Tamanho inicial e crescimento por petisco |
+| `GOOD_TREATS` | Pontos e chance de sorteio de cada petisco bom |
+| `hazardsFromScore` / `bombsFromScore` | A partir de quantos pontos surgem chocolates e dinamites |
+| `hazardChance` / `bombChance` / `maxHazards` | Quantos perigos aparecem e quantos deles são dinamite |
+| `chocolateLimit` | Em qual chocolate o Osvaldo não aguenta e a partida acaba |
+| `sickMs` / `sickSlowFactor` | Duração do mal-estar e quanto ele deixa o Osvaldo mais lento |
 | `wrapWalls` | `true`: bordas atravessáveis. `false`: bater na cerca também encerra a partida |
 | `cellsOnShortSide` | Quantas células cabem no lado menor da tela (tabuleiro mais aberto ou mais apertado) |
 | `touchDeadZone` | Sensibilidade do controle por toque |
 
 Os testes em `src/game/__tests__/core.test.ts` cobrem as regras (crescimento,
-pontuação, aceleração, mordida no rabo, travessia de bordas), então dá para
+pontuação por petisco, aceleração, chocolate, dinamite, mordida no rabo,
+travessia de bordas), então dá para
 mexer nos números com segurança.

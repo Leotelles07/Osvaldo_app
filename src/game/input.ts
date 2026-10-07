@@ -1,7 +1,8 @@
 /**
- * Controles. Duas linguagens, mesmo resultado:
+ * Controles. Três linguagens, mesmo resultado:
  *
  * - Teclado (web): setas ou W A S D, espaço/Esc para pausar.
+ * - Setas na tela (mobile): tocou, virou — veja `attachDpad`.
  * - Toque (mobile): o dedo funciona como guia. A direção é sempre a do dedo em
  *   relação à cabeça do Osvaldo, então dá para "puxar" o cachorro até o petisco
  *   arrastando o dedo, e um deslize rápido também funciona.
@@ -128,5 +129,55 @@ export function attachInput(canvas: HTMLCanvasElement, handlers: InputHandlers):
     canvas.removeEventListener('pointermove', onPointerMove);
     canvas.removeEventListener('pointerup', endPointer);
     canvas.removeEventListener('pointercancel', endPointer);
+  };
+}
+
+/**
+ * Setas na tela (mobile). A curva sai no `pointerdown`, no instante do toque,
+ * sem esperar o dedo subir como no `click` — é isso que deixa a resposta rápida.
+ */
+export function attachDpad(
+  dpad: HTMLElement,
+  handlers: Pick<InputHandlers, 'onDirection' | 'isPlaying'>,
+): () => void {
+  const buttonOf = (event: Event) =>
+    (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-dir]') ?? null;
+
+  const press = (button: HTMLButtonElement) => {
+    if (!handlers.isPlaying()) return;
+    handlers.onDirection(button.dataset.dir as Direction);
+  };
+
+  const onPointerDown = (event: PointerEvent) => {
+    const button = buttonOf(event);
+    if (!button) return;
+    event.preventDefault(); // sem foco, seleção de texto nem clique fantasma
+    button.classList.add('is-pressed');
+    press(button);
+  };
+
+  const release = (event: PointerEvent) => {
+    buttonOf(event)?.classList.remove('is-pressed');
+  };
+
+  // Ativação por teclado/leitor de tela (detail === 0); toques já foram tratados.
+  const onClick = (event: MouseEvent) => {
+    const button = buttonOf(event);
+    if (button && event.detail === 0) press(button);
+  };
+
+  dpad.addEventListener('pointerdown', onPointerDown);
+  dpad.addEventListener('pointerup', release);
+  dpad.addEventListener('pointercancel', release);
+  dpad.addEventListener('pointerout', release);
+  dpad.addEventListener('click', onClick);
+  dpad.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  return () => {
+    dpad.removeEventListener('pointerdown', onPointerDown);
+    dpad.removeEventListener('pointerup', release);
+    dpad.removeEventListener('pointercancel', release);
+    dpad.removeEventListener('pointerout', release);
+    dpad.removeEventListener('click', onClick);
   };
 }

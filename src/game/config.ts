@@ -50,7 +50,48 @@ export const CONFIG = {
 
   /** Quantas direções ficam na fila de input (evita perder curvas rápidas). */
   maxQueuedDirections: 2,
+
+  /** A partir de quantos pontos começam a aparecer chocolates. */
+  hazardsFromScore: 3,
+  /** A partir de quantos pontos as bombas também podem aparecer. */
+  bombsFromScore: 8,
+  /** Chance de cada vaga de perigo ser preenchida ao surgir um novo petisco bom. */
+  hazardChance: 0.6,
+  /** Chance de uma vaga de perigo virar bomba (quando bombas já estão liberadas). */
+  bombChance: 0.35,
+  /** Quantos perigos no máximo ficam no tabuleiro ao mesmo tempo. */
+  maxHazards: 3,
+  /** A cada quantos pontos abre mais uma vaga de perigo. */
+  pointsPerHazardSlot: 10,
+  /** Perigos nunca surgem a esta distância (em células) da cabeça: sem armadilhas injustas. */
+  hazardSafeRadius: 2,
+
+  /** No chocolate de número `chocolateLimit` o Osvaldo não aguenta e a partida acaba. */
+  chocolateLimit: 3,
+  /** Quanto tempo (ms de jogo) dura o mal-estar depois de um chocolate. */
+  sickMs: 4000,
+  /** Enquanto passa mal, o intervalo entre passos é multiplicado por isso (mais lento). */
+  sickSlowFactor: 1.4,
 } as const;
+
+/** Petiscos bons: o Osvaldo come, ganha pontos e cresce. */
+export type GoodTreatKind = 'bone' | 'beef' | 'strawberry' | 'banana' | 'avocado' | 'watermelon';
+/** Petiscos perigosos: chocolate faz mal, dinamite encerra a partida na hora. */
+export type HazardKind = 'chocolate' | 'bomb';
+export type TreatKind = GoodTreatKind | HazardKind;
+
+/**
+ * Catálogo dos petiscos bons. `weight` é a chance relativa de sorteio: quanto
+ * mais pontos o petisco vale, mais raro ele é.
+ */
+export const GOOD_TREATS: Record<GoodTreatKind, { points: number; weight: number }> = {
+  bone: { points: 1, weight: 30 },
+  strawberry: { points: 1, weight: 16 },
+  banana: { points: 1, weight: 16 },
+  avocado: { points: 1, weight: 14 },
+  beef: { points: 2, weight: 14 },
+  watermelon: { points: 3, weight: 8 },
+};
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
