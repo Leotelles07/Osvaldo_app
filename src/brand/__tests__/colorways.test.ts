@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLORWAYS, colorwayCssVars, pickColorway } from '../colorways';
+import { COLORWAYS, DEFAULT_COLORWAY, colorwayCssVars, pickColorway } from '../colorways';
 
 /* Contraste relativo da WCAG 2.1. */
 function luminancia(hex: string): number {
@@ -29,8 +29,30 @@ describe('combinações de cor da marca', () => {
     expect(new Set(COLORWAYS.map((c) => c.bg)).size).toBe(7);
   });
 
-  it('nunca usa a mesma cor como fundo e destaque', () => {
-    for (const c of COLORWAYS) expect(c.accent).not.toBe(c.bg);
+  it('nunca repete cor entre fundo, destaque e pelo do mascote', () => {
+    for (const c of COLORWAYS) {
+      const trinca = new Set([c.bg, c.accent, c.mascot]);
+      expect(trinca.size, `combinação ${c.name}`).toBe(3);
+    }
+  });
+
+  it('mantém as três pranchas do manual com as cores exatas dele', () => {
+    const manual = [
+      { name: 'magenta', bg: '#db016b', mascot: '#cae21e', accent: '#967dce' },
+      { name: 'lime', bg: '#cae21e', mascot: '#69bbc6', accent: '#dd4919' },
+      { name: 'teal', bg: '#69bbc6', mascot: '#e39b25', accent: '#db016b' },
+    ];
+    for (const esperado of manual) {
+      const real = COLORWAYS.find((c) => c.name === esperado.name);
+      expect(real, esperado.name).toBeDefined();
+      expect(real!.bg).toBe(esperado.bg);
+      expect(real!.mascot).toBe(esperado.mascot);
+      expect(real!.accent).toBe(esperado.accent);
+    }
+  });
+
+  it('usa como padrão a combinação do ícone (magenta, prancha oficial)', () => {
+    expect(DEFAULT_COLORWAY.name).toBe('magenta');
   });
 
   it('usa só os dois neutros da marca para texto', () => {
@@ -91,7 +113,7 @@ describe('combinações de cor da marca', () => {
       const vars = colorwayCssVars(c);
       expect(Object.keys(vars).sort()).toEqual([
         '--cw-accent', '--cw-bg', '--cw-field', '--cw-field-alt',
-        '--cw-on-accent', '--cw-on-bg',
+        '--cw-mascot', '--cw-on-accent', '--cw-on-bg',
       ]);
       expect(vars['--cw-bg']).toBe(c.bg);
       expect(vars['--cw-field']).toBe(c.field);

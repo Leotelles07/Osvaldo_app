@@ -96,8 +96,24 @@ Cada partida sorteia uma das sete combinações, sempre diferente da anterior.
 | --- | --- |
 | `bg` | Fundo da tela inteira |
 | `accent` | Argola do mascote, botão primário, foco, seta ativa |
+| `mascot` | Pelo do mascote |
 | `onBg` / `onAccent` | Neutro de maior contraste contra cada uma |
 | `field` / `fieldAlt` | Campo de jogo e faixas do xadrez |
+
+### Fundo, pelo e argola são sempre três cores distintas
+
+É como o manual monta as pranchas: magenta com pelo lima e argola roxa, lima
+com pelo turquesa e argola laranja, turquesa com pelo âmbar e argola magenta.
+As três primeiras combinações reproduzem o manual ao pé da letra; as outras
+quatro seguem a mesma lógica com cores da própria paleta.
+
+Usar o fundo como pelo faria o mascote sumir quando aplicado sobre o próprio
+fundo — é por isso que `mascot` existe como terceiro campo, e há teste
+exigindo que a trinca nunca repita cor.
+
+**A combinação `magenta` é a oficial:** é a do ícone, a do manifest e a que a
+tela inicial veste antes do primeiro sorteio. Trocar o ícone significa trocar
+`DEFAULT_COLORWAY` junto, e há teste ligando as duas coisas.
 
 ### Por que o campo não usa a cor pura
 
@@ -165,7 +181,7 @@ Arte vetorial extraída do manual, em `public/brand/`:
 
 | Arquivo | O que é |
 | --- | --- |
-| `mascote.svg` | Mascote que **veste a cor da partida** (via `--mascote-pelo` e `--mascote-argola`) |
+| `mascote.svg` | Mascote que **veste a cor da partida** (via `--mascote-pelo` e `--mascote-argola`, alimentados por `--cw-mascot` e `--cw-accent`) |
 | `mascote-teal/lime/amber.svg` | As três variantes fixas do manual |
 | `logo.svg` | Logotipo em `currentColor` — a cor vem do CSS |
 | `logo-preto/laranja/colorido.svg` | As três versões do manual |

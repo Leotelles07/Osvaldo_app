@@ -43,12 +43,13 @@
   /* ── Combinação da partida (colorway) ───────────────────────────────────
      Trocada em tempo de execução por src/brand/colorways.ts. Os valores
      abaixo são apenas o estado inicial, antes do primeiro sorteio.          */
-  --cw-bg: var(--brand-lime); /* fundo da tela inteira */
-  --cw-accent: var(--brand-orange); /* argola, detalhes, foco */
-  --cw-on-bg: var(--ink); /* texto grande sobre --cw-bg */
+  --cw-bg: var(--brand-magenta); /* fundo da tela inteira */
+  --cw-accent: var(--brand-purple); /* argola, detalhes, foco */
+  --cw-mascot: var(--brand-lime); /* pelo do mascote */
+  --cw-on-bg: var(--paper); /* texto grande sobre --cw-bg */
   --cw-on-accent: var(--ink); /* texto sobre --cw-accent */
-  --cw-field: #c0ca7d; /* campo de jogo */
-  --cw-field-alt: #b9c46e; /* faixas do xadrez do campo */
+  --cw-field: #dba7c0; /* campo de jogo */
+  --cw-field-alt: #d69ab7; /* faixas do xadrez do campo */
 
   /* ── Traço ──────────────────────────────────────────────────────────────
      O contorno preto é a assinatura da marca. Quanto maior o elemento,
