@@ -37,6 +37,12 @@ jobs:
         run: npm run build
 
       - uses: actions/configure-pages@v5
+        with:
+          # Cria o site do GitHub Pages na primeira execução, em vez de falhar
+          # com "Get Pages site failed" enquanto ninguém tiver ido em
+          # Settings → Pages habilitar na mão. Funciona porque o repositório é
+          # público e o job tem permissão `pages: write`.
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:

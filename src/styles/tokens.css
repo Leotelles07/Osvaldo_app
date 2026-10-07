@@ -1,0 +1,115 @@
+/* ==========================================================================
+   Osvaldo Games — Design Tokens
+   Fonte única da verdade do Design System. Toda cor, traço, raio, sombra e
+   tamanho de texto do app sai daqui. Nenhum valor cru de cor deve aparecer
+   fora deste arquivo.
+
+   Extraído de Dodo.svg (manual de marca). Documentação: DESIGN_SYSTEM.md
+   Página visual: /design-system.html
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Baloo 2';
+  font-style: normal;
+  font-weight: 400 800; /* fonte variável: um arquivo cobre toda a escala */
+  font-display: swap;
+  src: url('/fonts/baloo2-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  /* ── Paleta da marca ────────────────────────────────────────────────────
+     As sete cores do manual. São intercambiáveis: nenhuma é "a" cor do app.
+     É isso que permite sortear uma combinação por partida.                  */
+  --brand-purple: #967dce;
+  --brand-magenta: #db016b;
+  --brand-orange: #dd4919;
+  --brand-amber: #e39b25;
+  --brand-yellow: #e8e842;
+  --brand-lime: #cae21e;
+  --brand-teal: #69bbc6;
+
+  /* ── Neutros ────────────────────────────────────────────────────────────
+     "ink" é o preto quente da marca: contorno de absolutamente tudo.        */
+  --ink: #211915;
+  --paper: #fbfbf7;
+  --white: #ffffff;
+  --gray-100: #f7f7f8;
+  --gray-300: #c2c3c9;
+  --gray-600: #727176;
+
+  /* ── Combinação da partida (colorway) ───────────────────────────────────
+     Trocada em tempo de execução por src/brand/colorways.ts. Os valores
+     abaixo são apenas o estado inicial, antes do primeiro sorteio.          */
+  --cw-bg: var(--brand-lime); /* fundo da tela inteira */
+  --cw-accent: var(--brand-orange); /* argola, detalhes, foco */
+  --cw-on-bg: var(--ink); /* texto grande sobre --cw-bg */
+  --cw-on-accent: var(--ink); /* texto sobre --cw-accent */
+  --cw-field: #c0ca7d; /* campo de jogo */
+  --cw-field-alt: #b9c46e; /* faixas do xadrez do campo */
+
+  /* ── Traço ──────────────────────────────────────────────────────────────
+     O contorno preto é a assinatura da marca. Quanto maior o elemento,
+     mais grosso o traço.                                                    */
+  --stroke-1: 2px;
+  --stroke-2: 3px;
+  --stroke-3: 4px;
+
+  /* ── Sombras ────────────────────────────────────────────────────────────
+     Sólidas e deslocadas, nunca difusas: é o que dá o aspecto de adesivo
+     recortado. A sombra some quando o botão é pressionado.                  */
+  --shadow-1: 0 3px 0 var(--ink);
+  --shadow-2: 0 5px 0 var(--ink);
+  --shadow-3: 0 7px 0 var(--ink);
+  --shadow-pressed: 0 1px 0 var(--ink);
+  /* Única exceção à regra: painéis flutuantes ganham um halo suave para
+     descolar do fundo saturado. */
+  --shadow-panel: 0 7px 0 var(--ink), 0 18px 30px rgba(33, 25, 21, 0.3);
+
+  /* ── Raios ──────────────────────────────────────────────────────────────  */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  /* ── Tipografia ─────────────────────────────────────────────────────────
+     Uma família só, variável, arredondada — irmã do lettering do logotipo.  */
+  --font-brand: 'Baloo 2', 'Trebuchet MS', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --weight-body: 500;
+  --weight-bold: 700;
+  --weight-display: 800;
+
+  --text-xs: 0.7rem;
+  --text-sm: 0.82rem;
+  --text-md: 1rem;
+  --text-lg: 1.15rem;
+  --text-xl: clamp(1.2rem, 5vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 6.5vw, 2rem);
+  --text-3xl: clamp(2rem, 9vw, 2.8rem);
+  --text-4xl: clamp(3rem, 20vw, 6rem);
+
+  --tracking-wide: 1.5px;
+  --tracking-wider: 6px;
+
+  /* ── Espaçamento (escala de 4px) ────────────────────────────────────────  */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* ── Alvos de toque ─────────────────────────────────────────────────────
+     Mínimo confortável para criança e para quem tem pouca firmeza na mão.   */
+  --tap-min: 52px;
+  --tap-icon: 48px;
+
+  /* ── Movimento ──────────────────────────────────────────────────────────  */
+  --ease-pop: cubic-bezier(0.18, 1.2, 0.4, 1);
+  --t-fast: 0.12s;
+  --t-med: 0.3s;
+}

@@ -1,8 +1,10 @@
 /**
- * Osvaldo Game — ponto de entrada.
+ * Osvaldo Games — ponto de entrada.
  * Junta telas, contagem regressiva, loop de animação, HUD e controles.
  */
+import './styles/tokens.css';
 import './styles.css';
+import { applyColorway, pickColorway, DEFAULT_COLORWAY } from './brand/colorways';
 import { Game, type DeathCause } from './game/core';
 import { Renderer } from './game/renderer';
 import { attachInput, attachDpad } from './game/input';
@@ -67,7 +69,6 @@ let deathAt: number | null = null;
 let shakeStart = -Infinity;
 let shakeDuration = 0;
 let shakePower = 0;
-let stopMascot: (() => void) | null = null;
 let stopColorMascot: (() => void) | null = null;
 let stopFurHeads: (() => void) | null = null;
 /**
@@ -178,13 +179,6 @@ function showScreen(screen: AppScreen): void {
   screenColor.classList.toggle('is-active', screen === 'color');
   screenGame.classList.toggle('is-active', screen === 'game');
 
-  if (screen === 'start') {
-    stopMascot ??= startMascot($<HTMLCanvasElement>('mascot'));
-  } else {
-    stopMascot?.();
-    stopMascot = null;
-  }
-
   if (screen === 'color') {
     stopColorMascot ??= startMascot(
       $<HTMLCanvasElement>('mascot-color'),
@@ -240,6 +234,8 @@ function fitBoard(): void {
 /* ----------------------------------------------------- fluxo de partida -- */
 
 function beginRound(): void {
+  // Cada partida veste uma das sete combinações da marca.
+  applyColorway(pickColorway());
   hideOverlays();
   paused = false;
   lastEatAt = -Infinity;
@@ -470,6 +466,9 @@ const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
 $('controls-hint').textContent = coarsePointer
   ? 'Toque nas setas ou deslize o dedo'
   : 'Use as setas ou W A S D';
+
+// Cor inicial da marca; cada partida sorteia a sua a partir daqui.
+applyColorway(DEFAULT_COLORWAY);
 
 soundIcon.textContent = audio.muted ? '🔇' : '🔊';
 showScreen('start');

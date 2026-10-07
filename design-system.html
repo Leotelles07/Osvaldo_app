@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#cae21e" />
+    <meta
+      name="description"
+      content="Design System do Osvaldo Games: paleta, tipografia, componentes e uso da marca."
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>Design System — Osvaldo Games</title>
+  </head>
+  <body class="ds">
+    <header class="ds-hero">
+      <img class="ds-hero__mascot" src="./brand/mascote-teal.svg" alt="" />
+      <img class="ds-hero__logo" src="./brand/logo-preto.svg" alt="Osvaldo Games" />
+      <p class="ds-hero__sub">Design System</p>
+      <p class="ds-hero__note">
+        Extraído do manual de marca. Os valores desta página vêm dos mesmos
+        tokens que o jogo usa — se um mudar, esta página muda junto.
+      </p>
+    </header>
+
+    <nav class="ds-nav" aria-label="Seções">
+      <a href="#cores">Cores</a>
+      <a href="#combinacoes">Combinações</a>
+      <a href="#tipografia">Tipografia</a>
+      <a href="#tracos">Traço e sombra</a>
+      <a href="#componentes">Componentes</a>
+      <a href="#marca">Marca</a>
+    </nav>
+
+    <main class="ds-main">
+      <section id="cores" class="ds-section">
+        <h2 class="ds-h2">Cores</h2>
+        <p class="ds-p">
+          Sete cores, nenhuma principal. É essa ausência de hierarquia que
+          permite sortear uma combinação por partida. Os dois neutros são fixos:
+          <b>ink</b> contorna tudo, <b>paper</b> é toda superfície de conteúdo.
+        </p>
+        <div id="ds-palette" class="ds-grid"></div>
+        <h3 class="ds-h3">Neutros</h3>
+        <div id="ds-neutrals" class="ds-grid"></div>
+      </section>
+
+      <section id="combinacoes" class="ds-section">
+        <h2 class="ds-h2">Combinações da partida</h2>
+        <p class="ds-p">
+          Cada partida sorteia uma destas sete. O <b>campo</b> não é a cor pura:
+          é o mesmo matiz rebaixado para a luminância do gramado original
+          (0,464), que é a condição em que o Osvaldo e os petiscos foram
+          desenhados. O neutro do texto nunca é escolhido a olho — é sempre o de
+          maior contraste, e há teste travando isso.
+        </p>
+        <div id="ds-colorways" class="ds-cw-list"></div>
+      </section>
+
+      <section id="tipografia" class="ds-section">
+        <h2 class="ds-h2">Tipografia</h2>
+        <p class="ds-p">
+          <b>Baloo 2</b>, variável, auto-hospedada em um arquivo de 33 KB —
+          irmã arredondada do lettering do logotipo. Uma família só, três pesos.
+        </p>
+        <div id="ds-type" class="ds-type"></div>
+      </section>
+
+      <section id="tracos" class="ds-section">
+        <h2 class="ds-h2">Traço e sombra</h2>
+        <p class="ds-p">
+          O contorno preto e a sombra sólida deslocada são a assinatura da
+          marca. Sombra difusa só existe em painéis flutuantes, para descolar do
+          fundo saturado.
+        </p>
+        <div id="ds-strokes" class="ds-grid"></div>
+      </section>
+
+      <section id="componentes" class="ds-section">
+        <h2 class="ds-h2">Componentes</h2>
+        <p class="ds-p">
+          Os mesmos elementos do jogo, nas classes reais. Troque a combinação
+          acima e tudo aqui acompanha.
+        </p>
+        <div class="ds-demo">
+          <div class="ds-demo__row">
+            <button class="btn btn--primary" type="button">Botão primário</button>
+            <button class="btn btn--ghost" type="button">Botão secundário</button>
+          </div>
+          <div class="ds-demo__row">
+            <div class="hud__chip">
+              <span class="hud__label">Jogador</span>
+              <span class="hud__value">Leonardo</span>
+            </div>
+            <div class="hud__chip hud__chip--score">
+              <span class="hud__label">Pontos</span>
+              <span class="hud__value hud__value--score">0042</span>
+            </div>
+          </div>
+          <label class="field ds-demo__field">
+            <span class="field__label">Campo de texto</span>
+            <input class="field__input" type="text" placeholder="Digite aqui" />
+          </label>
+          <div class="ds-demo__row">
+            <div class="scoreline">
+              <span class="scoreline__label">Pontos / Recorde</span>
+              <span class="scoreline__value">0042/0117</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="marca" class="ds-section">
+        <h2 class="ds-h2">Marca</h2>
+        <p class="ds-p">
+          Arte vetorial extraída do manual, servida em <code>/brand/</code>. O
+          mascote e o logotipo monocromáticos aceitam cor via CSS: o mascote por
+          variáveis, o logotipo por <code>currentColor</code>.
+        </p>
+        <div id="ds-brand" class="ds-grid"></div>
+      </section>
+    </main>
+
+    <footer class="ds-footer">
+      <p>
+        Osvaldo Games · Design System · <a href="./">abrir o jogo</a>
+      </p>
+    </footer>
+
+    <script type="module" src="/src/design-system.ts"></script>
+  </body>
+</html>

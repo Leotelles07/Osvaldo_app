@@ -130,18 +130,21 @@ export function drawArena(
   width: number,
   height: number,
   cell: number,
+  field: string,
+  fieldAlt: string,
 ): void {
-  ctx.fillStyle = '#84c48f';
+  ctx.fillStyle = field;
   ctx.fillRect(0, 0, width, height);
 
-  // Xadrez suave de grama: ajuda a medir distâncias sem poluir a tela.
-  ctx.fillStyle = '#7abb85';
+  // Xadrez suave: ajuda a medir distâncias sem poluir a tela.
+  ctx.fillStyle = fieldAlt;
   for (let y = 0; y * cell < height; y++) {
     for (let x = 0; x * cell < width; x++) {
       if ((x + y) % 2 === 0) ctx.fillRect(x * cell, y * cell, cell, cell);
     }
   }
 
+  // Vinheta no tom da tinta da marca, para fechar as bordas do tabuleiro.
   const grad = ctx.createRadialGradient(
     width / 2,
     height / 2,
@@ -151,7 +154,7 @@ export function drawArena(
     Math.max(width, height) * 0.72,
   );
   grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(20,60,40,0.2)');
+  grad.addColorStop(1, 'rgba(33, 25, 21, 0.2)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 }
