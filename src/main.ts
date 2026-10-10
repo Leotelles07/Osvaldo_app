@@ -13,6 +13,16 @@ import { startMascot } from './ui/mascot';
 import { startFurHeads } from './ui/furHeads';
 import { CONFIG, OPPOSITE, type Direction } from './game/config';
 import { FUR_PALETTES, DEFAULT_FUR_COLOR, type FurColorId } from './game/draw';
+import { isAuthConfigured, signIn, signOut, signUp, watchAccount, type Account } from './auth/firebase';
+import {
+  describeAuthError,
+  errorCode,
+  hasErrors,
+  type FieldErrors,
+  validateSignIn,
+  validateSignUp,
+} from './auth/validation';
+import { bindAuthForm, type AuthForm } from './ui/authForm';
 
 /* ------------------------------------------------------------- elementos -- */
 
@@ -22,11 +32,16 @@ const $ = <T extends HTMLElement>(id: string): T => {
   return el as T;
 };
 
-const screenStart = $('screen-start');
+const screenSignup = $('screen-signup');
+const screenLogin = $('screen-login');
 const screenColor = $('screen-color');
 const screenGame = $('screen-game');
-const nameInput = $<HTMLInputElement>('player-name');
-const startForm = $<HTMLFormElement>('start-form');
+const signupFormEl = $<HTMLFormElement>('signup-form');
+const loginFormEl = $<HTMLFormElement>('login-form');
+const btnGoLogin = $<HTMLButtonElement>('btn-go-login');
+const btnGoSignup = $<HTMLButtonElement>('btn-go-signup');
+const colorPlayerName = $('color-player-name');
+const btnLogoutColor = $<HTMLButtonElement>('btn-logout-color');
 const colorOptions = $('color-options');
 const btnConfirmColor = $<HTMLButtonElement>('btn-confirm-color');
 const stage = $('stage');
@@ -45,7 +60,7 @@ const btnPause = $<HTMLButtonElement>('btn-pause');
 const btnResume = $<HTMLButtonElement>('btn-resume');
 const btnQuit = $<HTMLButtonElement>('btn-quit');
 const btnAgain = $<HTMLButtonElement>('btn-again');
-const btnChange = $<HTMLButtonElement>('btn-change');
+const btnLogout = $<HTMLButtonElement>('btn-logout');
 const btnSound = $<HTMLButtonElement>('btn-sound');
 const soundIcon = $('sound-icon');
 const dpad = $('dpad');
@@ -53,13 +68,15 @@ const dpadButtons = [...dpad.querySelectorAll<HTMLButtonElement>('[data-dir]')];
 
 /* ----------------------------------------------------------------- estado -- */
 
-type AppScreen = 'start' | 'color' | 'game';
+/** 'boot': nenhuma tela ainda, enquanto o Firebase diz se há alguém logado. */
+type AppScreen = 'boot' | 'signup' | 'login' | 'color' | 'game';
 
-const NAME_KEY = 'osvaldo:player';
-const MAX_NAME = 14;
+const signupForm = bindAuthForm(signupFormEl, 'Cadastrando…');
+const loginForm = bindAuthForm(loginFormEl, 'Entrando…');
 
-let playerName = '';
-/** Recorde do jogador nesta sessão (zera ao trocar de jogador). */
+/** Conta logada; o nome dela é o nome do jogador no HUD. */
+let account: Account | null = null;
+/** Recorde do jogador nesta sessão (zera ao trocar de conta). */
 let sessionRecord = 0;
 let paused = false;
 let countdownTimer: number | null = null;
@@ -175,7 +192,8 @@ function applyShake(now: number): void {
 }
 
 function showScreen(screen: AppScreen): void {
-  screenStart.classList.toggle('is-active', screen === 'start');
+  screenSignup.classList.toggle('is-active', screen === 'signup');
+  screenLogin.classList.toggle('is-active', screen === 'login');
   screenColor.classList.toggle('is-active', screen === 'color');
   screenGame.classList.toggle('is-active', screen === 'game');
 
@@ -322,13 +340,63 @@ function togglePause(force?: boolean): void {
   overlayPause.hidden = !paused;
 }
 
-function quitToStart(): void {
+function stopRound(): void {
   cancelCountdown();
   hideOverlays();
   paused = false;
   game.phase = 'over';
-  showScreen('start');
-  nameInput.focus();
+}
+
+/* --------------------------------------------------------------- acesso -- */
+
+/** Entrou (cadastro, login ou sessão salva): segue direto para a cor. */
+function enterAs(next: Account): void {
+  if (account?.uid !== next.uid) sessionRecord = 0; // recorde é por conta/sessão
+  account = next;
+  hudPlayer.textContent = next.name;
+  colorPlayerName.textContent = next.name;
+  signupForm.clear();
+  loginForm.clear();
+  showScreen('color');
+}
+
+function showAuth(screen: 'signup' | 'login'): void {
+  showScreen(screen);
+  (screen === 'signup' ? signupForm : loginForm).focusFirst();
+}
+
+async function logout(): Promise<void> {
+  stopRound();
+  account = null; // antes do signOut, para o watchAccount não navegar de novo
+  showAuth('login');
+  try {
+    await signOut();
+  } catch {
+    /* a tela já voltou para Entrar; no pior caso a sessão reaparece ao reabrir */
+  }
+}
+
+async function submitAuth(
+  form: AuthForm,
+  errors: FieldErrors,
+  request: () => Promise<Account>,
+): Promise<void> {
+  form.showMessage('');
+  form.showErrors(errors);
+  if (hasErrors(errors)) return;
+
+  audio.unlock(); // gesto do usuário: hora de liberar o áudio
+  (document.activeElement as HTMLElement | null)?.blur(); // fecha o teclado do celular
+  form.setBusy(true);
+  try {
+    enterAs(await request());
+  } catch (error) {
+    const failure = describeAuthError(errorCode(error));
+    if (failure.field) form.showErrors({ [failure.field]: failure.message });
+    else form.showMessage(failure.message);
+  } finally {
+    form.setBusy(false);
+  }
 }
 
 /* ------------------------------------------------------- loop principal -- */
@@ -352,30 +420,21 @@ function frame(now: number): void {
 
 /* ---------------------------------------------------------------- eventos -- */
 
-startForm.addEventListener('submit', (event) => {
+signupFormEl.addEventListener('submit', (event) => {
   event.preventDefault();
-  const value = nameInput.value.trim().slice(0, MAX_NAME);
-  if (!value) {
-    nameInput.classList.add('is-invalid');
-    nameInput.focus();
-    window.setTimeout(() => nameInput.classList.remove('is-invalid'), 400);
-    return;
-  }
-
-  audio.unlock(); // gesto do usuário: hora de liberar o áudio
-
-  if (value !== playerName) sessionRecord = 0; // recorde é por jogador/sessão
-  playerName = value;
-  hudPlayer.textContent = playerName;
-  try {
-    localStorage.setItem(NAME_KEY, playerName);
-  } catch {
-    /* segue sem persistir */
-  }
-
-  nameInput.blur(); // fecha o teclado do celular antes de começar
-  showScreen('color');
+  const values = signupForm.values();
+  void submitAuth(signupForm, validateSignUp(values), () => signUp(values));
 });
+
+loginFormEl.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const values = loginForm.values();
+  void submitAuth(loginForm, validateSignIn(values), () => signIn(values));
+});
+
+btnGoLogin.addEventListener('click', () => showAuth('login'));
+btnGoSignup.addEventListener('click', () => showAuth('signup'));
+btnLogoutColor.addEventListener('click', () => void logout());
 
 colorOptions.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.color-swatch');
@@ -402,14 +461,14 @@ btnAgain.addEventListener('click', () => {
   beginRound();
 });
 
-btnChange.addEventListener('click', () => {
-  nameInput.value = playerName;
-  quitToStart();
-});
+btnLogout.addEventListener('click', () => void logout());
 
 btnPause.addEventListener('click', () => togglePause());
 btnResume.addEventListener('click', () => togglePause(false));
-btnQuit.addEventListener('click', quitToStart);
+btnQuit.addEventListener('click', () => {
+  stopRound();
+  showScreen('color');
+});
 
 btnSound.addEventListener('click', () => {
   audio.unlock();
@@ -448,13 +507,6 @@ if ('ResizeObserver' in window) new ResizeObserver(onResize).observe(stage);
 
 /* ----------------------------------------------------------------- boot -- */
 
-try {
-  const saved = localStorage.getItem(NAME_KEY);
-  if (saved) nameInput.value = saved;
-} catch {
-  /* sem localStorage disponível */
-}
-
 if (import.meta.env.DEV) {
   // Gancho de depuração (apenas no servidor de desenvolvimento): permite
   // inspecionar e pilotar o jogo pelo console ou por testes automatizados.
@@ -471,7 +523,31 @@ $('controls-hint').textContent = coarsePointer
 applyColorway(DEFAULT_COLORWAY);
 
 soundIcon.textContent = audio.muted ? '🔇' : '🔊';
-showScreen('start');
+
+if (!isAuthConfigured) {
+  for (const form of [signupForm, loginForm]) {
+    form.showMessage(describeAuthError('auth/not-configured').message);
+  }
+}
+
+// Sessão salva entra direto; sem sessão, a primeira tela é o cadastro.
+showScreen('boot');
+let booted = false;
+watchAccount((current) => {
+  if (!booted) {
+    booted = true;
+    if (current) enterAs(current);
+    else showAuth('signup');
+    return;
+  }
+  // Depois da abertura, cadastro e login navegam sozinhos (ver submitAuth).
+  // Aqui só interessa a sessão que caiu por fora (expirou, saiu em outra aba).
+  if (!current && account) {
+    stopRound();
+    account = null;
+    showAuth('login');
+  }
+});
 fitBoard();
 requestAnimationFrame((t) => {
   lastFrame = t;

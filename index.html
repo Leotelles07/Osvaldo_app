@@ -27,9 +27,9 @@
     </svg>
 
     <div id="app">
-      <!-- ================= TELA INICIAL ================= -->
-      <section id="screen-start" class="screen screen--start is-active">
-        <div class="start-card">
+      <!-- ================= CADASTRO ================= -->
+      <section id="screen-signup" class="screen screen--auth">
+        <div class="start-card auth-card">
           <svg class="brand-mascot" viewBox="0 0 65.38 55.2" aria-hidden="true" focusable="false">
             <use href="#brand-mascot" />
           </svg>
@@ -38,32 +38,117 @@
               <use href="#brand-logo" />
             </svg>
           </h1>
-          <p class="tagline">Corra atrás dos petiscos.<br />Mas cuidado com o rabo, o chocolate e a dinamite!</p>
+          <h2 class="auth-title">Crie seu acesso</h2>
 
-          <form id="start-form" class="start-form" autocomplete="off">
+          <form id="signup-form" class="start-form" autocomplete="on" novalidate>
             <label class="field">
-              <span class="field__label">Qual é o seu nome?</span>
+              <span class="field__label">Nome</span>
               <input
-                id="player-name"
                 class="field__input"
                 type="text"
-                name="player"
+                name="name"
                 maxlength="14"
-                placeholder="Digite aqui"
-                enterkeyhint="go"
-                autocomplete="off"
+                placeholder="Como quer ser chamado"
+                enterkeyhint="next"
+                autocomplete="nickname"
                 autocapitalize="words"
                 spellcheck="false"
                 required
               />
+              <span class="field__error" aria-live="polite" hidden></span>
             </label>
-            <button id="start-button" class="btn btn--primary" type="submit">Iniciar</button>
+            <label class="field">
+              <span class="field__label">E-mail</span>
+              <input
+                class="field__input"
+                type="email"
+                name="email"
+                inputmode="email"
+                placeholder="voce@exemplo.com"
+                enterkeyhint="next"
+                autocomplete="email"
+                autocapitalize="off"
+                spellcheck="false"
+                required
+              />
+              <span class="field__error" aria-live="polite" hidden></span>
+            </label>
+            <label class="field">
+              <span class="field__label">Senha</span>
+              <input
+                class="field__input"
+                type="password"
+                name="password"
+                minlength="6"
+                placeholder="Mínimo de 6 caracteres"
+                enterkeyhint="go"
+                autocomplete="new-password"
+                required
+              />
+              <span class="field__error" aria-live="polite" hidden></span>
+            </label>
+            <p class="form-message" data-form-message role="alert" hidden></p>
+            <button class="btn btn--primary" type="submit">Cadastre</button>
           </form>
 
-          <p class="hint">
-            <span class="hint__row"><b>Celular:</b> toque nas setas ou deslize o dedo na tela</span>
-            <span class="hint__row"><b>Computador:</b> use as setas ou W A S D</span>
-          </p>
+          <div class="auth-switch">
+            <span class="auth-switch__text">Já tem cadastro?</span>
+            <button id="btn-go-login" class="btn btn--ghost" type="button">Entrar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ENTRAR ================= -->
+      <section id="screen-login" class="screen screen--auth">
+        <div class="start-card auth-card">
+          <svg class="brand-mascot" viewBox="0 0 65.38 55.2" aria-hidden="true" focusable="false">
+            <use href="#brand-mascot" />
+          </svg>
+          <h1 class="brand-title">
+            <svg class="brand-logo" viewBox="0 0 71.2 24.4" role="img" aria-label="Osvaldo Games" focusable="false">
+              <use href="#brand-logo" />
+            </svg>
+          </h1>
+          <h2 class="auth-title">Entrar</h2>
+
+          <form id="login-form" class="start-form" autocomplete="on" novalidate>
+            <label class="field">
+              <span class="field__label">E-mail</span>
+              <input
+                class="field__input"
+                type="email"
+                name="email"
+                inputmode="email"
+                placeholder="voce@exemplo.com"
+                enterkeyhint="next"
+                autocomplete="email"
+                autocapitalize="off"
+                spellcheck="false"
+                required
+              />
+              <span class="field__error" aria-live="polite" hidden></span>
+            </label>
+            <label class="field">
+              <span class="field__label">Senha</span>
+              <input
+                class="field__input"
+                type="password"
+                name="password"
+                placeholder="Sua senha"
+                enterkeyhint="go"
+                autocomplete="current-password"
+                required
+              />
+              <span class="field__error" aria-live="polite" hidden></span>
+            </label>
+            <p class="form-message" data-form-message role="alert" hidden></p>
+            <button class="btn btn--primary" type="submit">Entrar</button>
+          </form>
+
+          <div class="auth-switch">
+            <span class="auth-switch__text">Ainda não tem acesso?</span>
+            <button id="btn-go-signup" class="btn btn--ghost" type="button">Cadastre</button>
+          </div>
         </div>
       </section>
 
@@ -71,6 +156,10 @@
       <section id="screen-color" class="screen screen--color">
         <div class="color-card">
           <h1 class="color-title">Escolha a cor do Osvaldo</h1>
+          <p class="color-player">
+            Jogando como <b id="color-player-name">—</b>
+            <button id="btn-logout-color" class="link-btn" type="button">Sair da conta</button>
+          </p>
 
           <div class="color-mascot">
             <canvas id="mascot-color" width="320" height="180" aria-hidden="true"></canvas>
@@ -162,7 +251,7 @@
               <p id="gameover-badge" class="badge" hidden>Novo recorde!</p>
               <div class="panel__actions">
                 <button id="btn-again" class="btn btn--primary" type="button">Jogar de novo</button>
-                <button id="btn-change" class="btn btn--ghost" type="button">Trocar jogador</button>
+                <button id="btn-logout" class="btn btn--ghost" type="button">Sair da conta</button>
               </div>
             </div>
           </div>

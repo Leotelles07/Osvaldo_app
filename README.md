@@ -12,6 +12,11 @@ o dedo) ou no **computador** (setas ou W A S D).
 
 ## Como jogar
 
+Na primeira vez, crie um acesso com **nome, e-mail e senha** (mínimo de 6
+caracteres) e toque em **Cadastre**. Quem já tem cadastro toca em **Entrar**.
+O acesso fica salvo no aparelho: ao reabrir o jogo, você já entra direto na
+escolha de cor do Osvaldo. O nome da conta é o que aparece no placar.
+
 | Plataforma | Controle |
 | --- | --- |
 | Celular / tablet | Arraste o dedo na tela. O Osvaldo vira na direção do seu dedo — dá para "puxar" ele até o petisco. Um deslize rápido também funciona. |
@@ -37,6 +42,15 @@ o dedo) ou no **computador** (setas ou W A S D).
   atravessáveis: sai de um lado, entra do outro.
 - Ao perder, o placar aparece como `PONTOS/RECORDE` (ex.: `0007/0012`), sendo o
   recorde o melhor resultado daquele jogador na sessão.
+
+### Telas
+
+```
+Cadastro ⇄ Entrar ──▶ Escolha de cor ──▶ Jogo (contagem → partida → pausa / fim de jogo)
+```
+
+"Sair" na pausa volta para a escolha de cor; **Sair da conta** (na escolha de
+cor e no fim de jogo) volta para a tela de Entrar.
 
 ---
 
@@ -65,6 +79,49 @@ O terminal mostra dois endereços:
   que o seu terminal imprimir.)
 
 Para parar o servidor: `Ctrl+C`.
+
+Para testar o cadastro e o login localmente, configure o Firebase primeiro
+(próxima seção). Sem ele o jogo abre, mas as telas de acesso avisam que estão
+indisponíveis.
+
+## Contas (Firebase)
+
+O cadastro e o login usam o **Firebase Authentication** com e-mail e senha.
+Para ativar (uma vez só):
+
+1. Em [console.firebase.google.com](https://console.firebase.google.com), crie
+   um projeto (o Google Analytics pode ficar desligado).
+2. **Authentication → Começar → Método de login → E-mail/senha → Ativar.**
+3. **Authentication → Configurações → Domínios autorizados:** adicione
+   `leotelles07.github.io` (o `localhost` já vem na lista).
+4. **Configurações do projeto → Seus apps → Web (`</>`)**: registre um app e
+   copie os valores de `firebaseConfig`.
+5. Copie [`.env.example`](.env.example) para `.env.local` e preencha:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   | Variável | Campo do `firebaseConfig` |
+   | --- | --- |
+   | `VITE_FIREBASE_API_KEY` | `apiKey` |
+   | `VITE_FIREBASE_AUTH_DOMAIN` | `authDomain` |
+   | `VITE_FIREBASE_PROJECT_ID` | `projectId` |
+   | `VITE_FIREBASE_APP_ID` | `appId` |
+
+6. Para a versão publicada, cadastre as mesmas quatro variáveis em
+   **Settings → Secrets and variables → Actions → New repository secret**
+   do repositório. O [`deploy.yml`](.github/workflows/deploy.yml) as repassa
+   para o build.
+
+> Esses valores são a configuração **pública** do app web — eles vão para o
+> navegador de qualquer jeito. Quem protege as contas é o Firebase (senhas
+> com hash no servidor, limite de tentativas, domínios autorizados), não o
+> segredo dessas chaves. Nunca coloque no `.env` uma chave de servidor
+> (conta de serviço / Admin SDK).
+
+O Firebase mantém a sessão salva no navegador (IndexedDB), por isso o jogador
+continua logado ao reabrir o app até tocar em **Sair da conta**.
 
 ### Outros comandos
 
@@ -120,17 +177,21 @@ Em resumo:
 
 | Camada | Escolha | Por quê |
 | --- | --- | --- |
-| Build | **Vite + TypeScript** | Bundle final de ~7 KB gzip: abre instantâneo mesmo em 4G ruim. Tipagem evita a classe de bug mais comum em jogos (estado inconsistente). |
-| UI das telas | **HTML + CSS puro** | As telas (início, contagem, pausa, fim) são DOM comum: acessíveis, com teclado do celular funcionando de verdade e sem o custo de um framework. |
+| Build | **Vite + TypeScript** | O jogo em si tem ~7 KB gzip; com o SDK do Firebase Auth o bundle fica em ~50 KB gzip. Tipagem evita a classe de bug mais comum em jogos (estado inconsistente). |
+| UI das telas | **HTML + CSS puro** | As telas (cadastro, entrar, cor, contagem, pausa, fim) são DOM comum: acessíveis, com teclado do celular e gerenciador de senhas funcionando de verdade e sem o custo de um framework. |
 | Jogo | **Canvas 2D** | Um único elemento redesenhado a cada quadro. Sem DOM por segmento, sem WebGL: roda liso em aparelho simples e não gasta bateria. |
 | Áudio | **Web Audio API** | Efeitos sintetizados na hora — zero arquivos para baixar. |
-| Backend | **nenhum** | O jogo é 100% estático. Nome e recorde da sessão vivem no aparelho. Hospedagem gratuita, nada para manter, nada de dado pessoal saindo do celular. |
+| Contas | **Firebase Authentication** | Cadastro e login com e-mail e senha sem manter servidor próprio. O resto continua estático: o recorde da sessão vive só no aparelho. |
 
 ### Estrutura
 
 ```
 src/
-├── main.ts              Orquestra tudo: telas, contagem regressiva, loop, HUD
+├── main.ts              Orquestra tudo: acesso, telas, contagem regressiva, loop, HUD
+├── auth/
+│   ├── firebase.ts      Cadastro, login, saída e sessão salva (Firebase Auth)
+│   ├── validation.ts    Regras dos formulários e mensagens de erro em português
+│   └── __tests__/       Testes das regras de acesso
 ├── styles.css           Layout mobile-first (dvh + safe-area, sem scroll)
 ├── game/
 │   ├── config.ts        Balanceamento: velocidade, crescimento, tamanho do tabuleiro
@@ -140,7 +201,10 @@ src/
 │   ├── input.ts         Teclado e toque → direções
 │   ├── audio.ts         Efeitos sonoros
 │   └── __tests__/       Testes das regras
-└── ui/mascot.ts         Osvaldo animado da tela inicial
+└── ui/
+    ├── authForm.ts      Liga os formulários de acesso ao DOM (erros, carregando)
+    ├── mascot.ts        Osvaldo animado da escolha de cor
+    └── furHeads.ts      Cabecinhas das opções de cor
 ```
 
 ### Decisões que fazem o jogo parecer "gostoso"
@@ -187,12 +251,15 @@ mesmo tempo, sem piscar.
 ### Acessibilidade e cuidado com o jogador
 
 - Botões com no mínimo 52 px de altura e fontes grandes.
-- Campo de nome com fonte ≥ 16 px (evita o zoom automático do iOS) e o teclado
-  fecha sozinho antes da partida começar.
+- Campos com fonte ≥ 16 px (evita o zoom automático do iOS), `autocomplete`
+  certo para o gerenciador de senhas e teclado de e-mail no celular. O teclado
+  fecha sozinho ao enviar o formulário.
+- Erros aparecem embaixo de cada campo e são anunciados para leitores de tela.
 - O jogo pausa sozinho ao trocar de aba ou receber uma ligação.
 - Som pode ser desligado (a preferência fica salva) e a vibração respeita isso.
 - `prefers-reduced-motion` desliga as animações da interface.
-- Nenhum dado sai do aparelho.
+- Só nome, e-mail e senha saem do aparelho, direto para o Firebase. O jogo
+  não guarda a senha em lugar nenhum.
 
 ---
 
