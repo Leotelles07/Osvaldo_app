@@ -35,14 +35,6 @@ jobs:
 
       - name: Build de produção
         run: npm run build
-        env:
-          # Configuração pública do app web no Firebase (ver README → Contas).
-          # Sem elas o build passa, mas as telas de acesso avisam que estão
-          # indisponíveis.
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
 
       - uses: actions/configure-pages@v5
         with:

@@ -80,45 +80,39 @@ O terminal mostra dois endereços:
 
 Para parar o servidor: `Ctrl+C`.
 
-Para testar o cadastro e o login localmente, configure o Firebase primeiro
-(próxima seção). Sem ele o jogo abre, mas as telas de acesso avisam que estão
-indisponíveis.
+O cadastro e o login já funcionam direto do `npm run dev`: a configuração do
+Firebase vem no arquivo [`.env`](.env) do repositório.
 
 ## Contas (Firebase)
 
-O cadastro e o login usam o **Firebase Authentication** com e-mail e senha.
-Para ativar (uma vez só):
+O cadastro e o login usam o **Firebase Authentication** (projeto
+`osvaldo-games`) com e-mail e senha. A configuração do app web fica em
+[`.env`](.env), versionada, e vale para o servidor local e para o build
+publicado — não há secret para cadastrar no GitHub.
 
-1. Em [console.firebase.google.com](https://console.firebase.google.com), crie
-   um projeto (o Google Analytics pode ficar desligado).
-2. **Authentication → Começar → Método de login → E-mail/senha → Ativar.**
-3. **Authentication → Configurações → Domínios autorizados:** adicione
-   `leotelles07.github.io` (o `localhost` já vem na lista).
-4. **Configurações do projeto → Seus apps → Web (`</>`)**: registre um app e
-   copie os valores de `firebaseConfig`.
-5. Copie [`.env.example`](.env.example) para `.env.local` e preencha:
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   | Variável | Campo do `firebaseConfig` |
-   | --- | --- |
-   | `VITE_FIREBASE_API_KEY` | `apiKey` |
-   | `VITE_FIREBASE_AUTH_DOMAIN` | `authDomain` |
-   | `VITE_FIREBASE_PROJECT_ID` | `projectId` |
-   | `VITE_FIREBASE_APP_ID` | `appId` |
-
-6. Para a versão publicada, cadastre as mesmas quatro variáveis em
-   **Settings → Secrets and variables → Actions → New repository secret**
-   do repositório. O [`deploy.yml`](.github/workflows/deploy.yml) as repassa
-   para o build.
+| Variável | Campo do `firebaseConfig` |
+| --- | --- |
+| `VITE_FIREBASE_API_KEY` | `apiKey` |
+| `VITE_FIREBASE_AUTH_DOMAIN` | `authDomain` |
+| `VITE_FIREBASE_PROJECT_ID` | `projectId` |
+| `VITE_FIREBASE_APP_ID` | `appId` |
 
 > Esses valores são a configuração **pública** do app web — eles vão para o
 > navegador de qualquer jeito. Quem protege as contas é o Firebase (senhas
 > com hash no servidor, limite de tentativas, domínios autorizados), não o
 > segredo dessas chaves. Nunca coloque no `.env` uma chave de servidor
 > (conta de serviço / Admin SDK).
+
+No console do Firebase precisam estar ligados:
+
+- **Authentication → Método de login → E-mail/senha.**
+- **Authentication → Configurações → Domínios autorizados:**
+  `leotelles07.github.io` (o `localhost` já vem na lista). Publicar em outro
+  domínio exige adicioná-lo aqui.
+
+Para testar contra outro projeto do Firebase na sua máquina, crie um
+`.env.local` com as mesmas quatro variáveis: ele tem prioridade sobre o `.env`
+e não vai para o Git.
 
 O Firebase mantém a sessão salva no navegador (IndexedDB), por isso o jogador
 continua logado ao reabrir o app até tocar em **Sair da conta**.
