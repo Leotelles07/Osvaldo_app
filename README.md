@@ -125,6 +125,20 @@ npm run build    # checagem de tipos + build de produção em dist/
 npm run preview  # serve o build de produção (também acessível pela rede)
 ```
 
+## Banco de dados (PostgreSQL)
+
+As tabelas para guardar jogadores, sessões e partidas (recorde, ranking e
+métricas de uso) estão em [`db/`](db). O passo a passo para montar o banco na
+sua máquina está em **[db/README.md](db/README.md)** e a modelagem em
+**[docs/modelagem-banco.md](docs/modelagem-banco.md)**. O jogo ainda não grava
+nada no banco: falta a API entre o navegador e ele.
+
+```bash
+npm run db:migrate   # cria/atualiza as tabelas (usa DATABASE_URL do .env.local)
+npm run db:status    # migrações aplicadas e pendentes
+npm run db:seed      # dados de exemplo para desenvolvimento
+```
+
 ## Publicação
 
 O workflow [`deploy.yml`](.github/workflows/deploy.yml) publica no **GitHub

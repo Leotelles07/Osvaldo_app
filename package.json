@@ -10,9 +10,13 @@
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:migrate": "node scripts/db.mjs migrate",
+    "db:status": "node scripts/db.mjs status",
+    "db:seed": "node scripts/db.mjs seed"
   },
   "devDependencies": {
+    "pg": "^8.23.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.9"

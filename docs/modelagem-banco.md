@@ -1,24 +1,21 @@
 # Modelagem do banco de dados — Osvaldo Games
 
-> **Status:** proposta para discussão. Nada daqui está implementado ainda.
+> **Status:** estrutura implementada em [`db/`](../db) (PostgreSQL). Como
+> montar o banco: [db/README.md](../db/README.md). O jogo ainda não grava
+> partidas — falta a API entre o navegador e o banco.
 
-## 1. Onde guardar: Firebase Data Connect (PostgreSQL)
+## 1. Onde guardar: PostgreSQL próprio
 
-O requisito é ter dados **relacionais**, para tirar métricas de uso depois.
-Dentro do Firebase há duas opções:
+O requisito é ter dados **relacionais**, para tirar métricas de uso depois, e
+sem custo. Por isso o banco é um **PostgreSQL** comum, rodando na máquina de
+desenvolvimento e, depois, num serviço gratuito de PostgreSQL gerenciado.
 
-| Opção | Relacional? | Métricas | Observação |
-| --- | --- | --- | --- |
-| **Firebase Data Connect** | Sim — é um **PostgreSQL** (Cloud SQL) | SQL direto: `JOIN`, `GROUP BY`, views | O app fala com o banco por GraphQL gerado pelo Firebase; o Firebase Auth que já existe controla quem lê/escreve o quê. |
-| Cloud Firestore | Não (documentos) | Exige exportar para o BigQuery | Agregações como "recorde de cada jogador" ou "ranking geral" precisam ser mantidas à mão (contadores duplicados). |
+Foram descartados o Firebase Data Connect (também é PostgreSQL, mas exige o
+plano pago Blaze) e o Cloud Firestore (não é relacional: agregações como
+"recorde de cada jogador" teriam de ser mantidas à mão).
 
-**Recomendação: Data Connect.** Ele atende o "relacional" de verdade, usa o
-mesmo projeto `osvaldo-games` e o mesmo login, e qualquer métrica futura vira
-uma consulta SQL — sem migrar de banco depois.
-
-Custo: o Data Connect usa uma instância do Cloud SQL e exige o plano **Blaze**
-(pago por uso) no projeto Firebase. Isso precisa ser confirmado antes de
-implementar.
+O Firebase continua cuidando só do **login**: o `id` de cada usuário no banco
+é o `uid` do Firebase Auth.
 
 ## 2. Da lista inicial para tabelas
 
@@ -169,9 +166,9 @@ novo não exija alterar a estrutura.
 
 ## 5. SQL de referência (PostgreSQL)
 
-No Data Connect as tabelas são declaradas em GraphQL (`schema.gql`) e o
-Firebase gera o SQL; o script abaixo mostra o resultado esperado e serve de
-referência para as consultas.
+Resumo da estrutura. A versão que vale é a migração
+[`db/migrations/001_estrutura_inicial.sql`](../db/migrations/001_estrutura_inicial.sql),
+que tem também as regras de consistência entre datas.
 
 ```sql
 create table usuarios (
@@ -276,27 +273,27 @@ select s.plataforma, count(p.id) as partidas, avg(p.duracao_ms) / 1000 as segund
 
 ## 7. Segurança
 
-- Cada operação do Data Connect declara `@auth`: o jogador só cria sessões e
-  partidas com o próprio `uid` e só lê os próprios dados. O ranking é exposto
-  por uma consulta pública que devolve apenas `posicao`, `nome` e `recorde`
-  (nunca o e-mail).
+- O navegador nunca conecta direto no banco. Uma API confere o token do
+  Firebase Auth e só grava sessões e partidas com o `uid` de quem está
+  logado. O ranking devolve apenas `posicao`, `nome` e `recorde` (nunca o
+  e-mail).
+- A senha do banco fica no `.env.local` (fora do Git) e, em produção, nas
+  variáveis de ambiente do servidor da API.
 - **Limite conhecido:** os pontos são calculados no navegador, então um
   jogador com conhecimento técnico consegue enviar um placar falso. Para um
   ranking casual isso é aceitável; se o ranking virar competição com prêmio,
-  a validação precisa ir para o servidor (ex.: Cloud Function que confere
-  `pontos` × `duracao_ms` × petiscos comidos).
+  a API precisa conferir `pontos` × `duracao_ms` × petiscos comidos.
 
 ## 8. Decisões em aberto
 
-1. **Plano Blaze** liberado no projeto `osvaldo-games`? (pré-requisito do Data Connect)
-2. **Recorde da tela de fim de jogo:** hoje é o melhor *da sessão*. Com o
+1. **Recorde da tela de fim de jogo:** hoje é o melhor *da sessão*. Com o
    banco, passa a ser o recorde de todas as partidas do jogador, ou continua
    o da sessão (e o histórico fica só nas métricas)?
-3. **Partidas abandonadas** (sair pela pausa) devem ser gravadas? A proposta
+2. **Partidas abandonadas** (sair pela pausa) devem ser gravadas? A proposta
    grava com `causa_fim = 'abandono'`, mas elas não contam para o recorde se
    decidirmos assim.
-4. **Cor preferida:** vale lembrar a última cor escolhida do jogador
+3. **Cor preferida:** vale lembrar a última cor escolhida do jogador
    (`usuarios.cor_preferida_id`), ou a escolha continua sempre começando no
    padrão?
-5. **Sem internet:** se a partida terminar offline, guardamos localmente e
+4. **Sem internet:** se a partida terminar offline, guardamos localmente e
    enviamos depois, ou descartamos?
