@@ -35,7 +35,8 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const hash = (sql) => createHash('sha256').update(sql).digest('hex');
+// Quebras de linha normalizadas: o mesmo arquivo tem CRLF no Windows e LF no resto.
+const hash = (sql) => createHash('sha256').update(sql.replace(/\r\n/g, '\n')).digest('hex');
 
 function migrationFiles() {
   return readdirSync(migrationsDir)

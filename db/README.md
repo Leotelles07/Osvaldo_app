@@ -62,6 +62,41 @@ psql -U osvaldo -d osvaldo_games -c "select * from vw_ranking"
        3 | exemplo-caio | Caio |       3 |
 ```
 
+## Pelo pgAdmin 4
+
+Um "servidor" no pgAdmin é só a conexão com um PostgreSQL; as tabelas ficam
+dentro de um **banco** desse servidor. Com o servidor já cadastrado:
+
+**1. Criar o usuário.** Clique com o botão direito em
+*Login/Group Roles → Create → Login/Group Role…*
+
+- *General → Name:* `osvaldo`
+- *Definition → Password:* a senha escolhida
+- *Privileges → Can login?:* ligado
+
+**2. Criar o banco.** Botão direito em *Databases → Create → Database…*
+
+- *Database:* `osvaldo_games`
+- *Owner:* `osvaldo`
+
+**3. Criar as tabelas.** Escolha **uma** das duas formas:
+
+- **Pelo terminal (recomendado):** preencha o `.env.local` com o endereço do
+  servidor (em *Properties → Connection* do servidor no pgAdmin estão o
+  *Host* e a *Port*) e rode `npm run db:migrate`, como no passo 3 acima.
+- **Só pelo pgAdmin:** selecione o banco `osvaldo_games`, abra o
+  *Tools → Query Tool*, clique em *Open File* e escolha
+  `db/migrations/001_estrutura_inicial.sql`. Execute (F5). Depois abra e
+  execute, do mesmo jeito, `db/pgadmin/registrar_001.sql` — ele avisa ao
+  `npm run db:migrate` que essa migração já foi feita, para ele não tentar
+  criar as tabelas de novo no futuro.
+
+Para conferir, atualize o banco (F5) e veja as tabelas em
+*Schemas → public → Tables* e as views em *Views*.
+
+> Num banco de produção não rode o `npm run db:seed`: ele cria jogadores e
+> partidas de mentira que entrariam no ranking.
+
 ## Comandos
 
 | Comando | O que faz |
