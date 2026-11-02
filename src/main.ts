@@ -4,7 +4,7 @@
  */
 import './styles/tokens.css';
 import './styles.css';
-import { applyColorway, pickColorway, DEFAULT_COLORWAY } from './brand/colorways';
+import { applyColorway, getColorway, pickColorway, DEFAULT_COLORWAY } from './brand/colorways';
 import { Game, type DeathCause } from './game/core';
 import { Renderer } from './game/renderer';
 import { attachInput, attachDpad } from './game/input';
@@ -23,6 +23,9 @@ import {
   validateSignUp,
 } from './auth/validation';
 import { bindAuthForm, type AuthForm } from './ui/authForm';
+import { bindRanking } from './ui/ranking';
+import * as cloud from './data/cloud';
+import { buildMatch, newProfile, type UserProfile } from './data/schema';
 
 /* ------------------------------------------------------------- elementos -- */
 
@@ -36,6 +39,7 @@ const screenSignup = $('screen-signup');
 const screenLogin = $('screen-login');
 const screenColor = $('screen-color');
 const screenGame = $('screen-game');
+const screenRanking = $('screen-ranking');
 const signupFormEl = $<HTMLFormElement>('signup-form');
 const loginFormEl = $<HTMLFormElement>('login-form');
 const btnGoLogin = $<HTMLButtonElement>('btn-go-login');
@@ -44,6 +48,9 @@ const colorPlayerName = $('color-player-name');
 const btnLogoutColor = $<HTMLButtonElement>('btn-logout-color');
 const colorOptions = $('color-options');
 const btnConfirmColor = $<HTMLButtonElement>('btn-confirm-color');
+const btnRankingColor = $<HTMLButtonElement>('btn-ranking-color');
+const btnRankingGameOver = $<HTMLButtonElement>('btn-ranking-gameover');
+const btnRankingBack = $<HTMLButtonElement>('btn-ranking-back');
 const stage = $('stage');
 const board = $<HTMLCanvasElement>('board');
 const hudPlayer = $('hud-player');
@@ -69,15 +76,27 @@ const dpadButtons = [...dpad.querySelectorAll<HTMLButtonElement>('[data-dir]')];
 /* ----------------------------------------------------------------- estado -- */
 
 /** 'boot': nenhuma tela ainda, enquanto o Firebase diz se há alguém logado. */
-type AppScreen = 'boot' | 'signup' | 'login' | 'color' | 'game';
+type AppScreen = 'boot' | 'signup' | 'login' | 'color' | 'game' | 'ranking';
 
 const signupForm = bindAuthForm(signupFormEl, 'Cadastrando…');
 const loginForm = bindAuthForm(loginFormEl, 'Entrando…');
+const rankingView = bindRanking($<HTMLOListElement>('ranking-list'), $('ranking-status'));
 
 /** Conta logada; o nome dela é o nome do jogador no HUD. */
 let account: Account | null = null;
-/** Recorde do jogador nesta sessão (zera ao trocar de conta). */
+/**
+ * Maior recorde conhecido da conta: o do banco (perfil) ou o desta sessão,
+ * se o banco ainda não respondeu. Zera ao trocar de conta.
+ */
 let sessionRecord = 0;
+/** O perfil do banco já foi aplicado às telas nesta entrada? (cor e som) */
+let profileApplied = false;
+/** O jogador mexeu na cor antes de o perfil chegar? Então a escolha dele vale. */
+let colorTouched = false;
+/** Para onde o "Voltar" do ranking leva. */
+let rankingReturn: 'color' | 'game' = 'color';
+/** Pedido de ranking em andamento: respostas de pedidos antigos são ignoradas. */
+let rankingRequest = 0;
 let paused = false;
 let countdownTimer: number | null = null;
 let lastEatAt = -Infinity;
@@ -89,9 +108,9 @@ let shakePower = 0;
 let stopColorMascot: (() => void) | null = null;
 let stopFurHeads: (() => void) | null = null;
 /**
- * Cor escolhida pelo jogador para a partida. Vive só em memória (não é
- * persistida): atualizar a página sempre volta para a escolha padrão, mas
- * "jogar de novo" na mesma sessão mantém a cor já confirmada.
+ * Cor escolhida pelo jogador para a partida. Ao entrar, vem do perfil no
+ * banco (a última cor confirmada, em qualquer aparelho); sem banco, começa
+ * na padrão.
  */
 let selectedColorId: FurColorId = DEFAULT_FUR_COLOR;
 
@@ -128,8 +147,11 @@ const game = new Game({
       updateChocolates(game.chocolates);
       startShake(7, 600);
     }
+    // O recorde de antes é guardado aqui: salvar a partida já atualiza o perfil.
+    const previousRecord = knownRecord();
+    saveFinishedMatch(cause);
     const delay = cause === 'bomb' ? 1150 : cause === 'chocolate' ? 800 : 550;
-    window.setTimeout(() => showGameOver(score, cause), delay);
+    window.setTimeout(() => showGameOver(score, cause, previousRecord), delay);
   },
 });
 
@@ -196,6 +218,7 @@ function showScreen(screen: AppScreen): void {
   screenLogin.classList.toggle('is-active', screen === 'login');
   screenColor.classList.toggle('is-active', screen === 'color');
   screenGame.classList.toggle('is-active', screen === 'game');
+  screenRanking.classList.toggle('is-active', screen === 'ranking');
 
   if (screen === 'color') {
     stopColorMascot ??= startMascot(
@@ -318,9 +341,9 @@ function gameOverMessage(score: number, cause: DeathCause): string {
   }
 }
 
-function showGameOver(score: number, cause: DeathCause): void {
-  const isRecord = score > sessionRecord;
-  if (isRecord) sessionRecord = score;
+function showGameOver(score: number, cause: DeathCause, previousRecord: number): void {
+  const isRecord = score > previousRecord;
+  sessionRecord = Math.max(previousRecord, score, sessionRecord);
 
   const line = `${pad(score)}/${pad(sessionRecord)}`;
   gameOverScore.textContent = line;
@@ -347,11 +370,85 @@ function stopRound(): void {
   game.phase = 'over';
 }
 
+/* ------------------------------------------------------------- banco -- */
+
+function knownRecord(): number {
+  return Math.max(sessionRecord, cloud.currentProfile()?.bestScore ?? 0);
+}
+
+/** Salva a partida que acabou de terminar (morte, não desistência). */
+function saveFinishedMatch(cause: DeathCause): void {
+  cloud.saveMatch(
+    buildMatch({
+      cause,
+      durationMs: game.elapsedMs,
+      treats: game.treatsEaten,
+      chocolates: game.chocolates,
+      length: game.body.length,
+      furColor: selectedColorId,
+      colorway: getColorway().name,
+      input: coarsePointer ? 'touch' : 'keyboard',
+      appVersion: __APP_VERSION__,
+    }),
+  );
+}
+
+function selectColor(colorId: FurColorId): void {
+  selectedColorId = colorId;
+  for (const swatch of colorOptions.querySelectorAll<HTMLButtonElement>('.color-swatch')) {
+    const isSelected = swatch.dataset.color === colorId;
+    swatch.classList.toggle('is-selected', isSelected);
+    swatch.setAttribute('aria-checked', String(isSelected));
+  }
+}
+
+function setSoundIcon(): void {
+  soundIcon.textContent = audio.muted ? '🔇' : '🔊';
+  btnSound.setAttribute('aria-pressed', String(audio.muted));
+}
+
+/**
+ * Chegou uma versão do perfil. Na primeira, a cor e o som da conta passam a
+ * valer neste aparelho; nas seguintes, só o recorde é atualizado.
+ */
+function applyProfile(profile: UserProfile): void {
+  sessionRecord = Math.max(sessionRecord, profile.bestScore);
+  if (profileApplied) return;
+  profileApplied = true;
+  if (!colorTouched && game.phase !== 'running') selectColor(profile.furColor);
+  audio.setMuted(profile.soundMuted);
+  setSoundIcon();
+}
+
+async function openRanking(from: 'color' | 'game'): Promise<void> {
+  rankingReturn = from;
+  showScreen('ranking');
+  rankingView.showLoading();
+  const request = ++rankingRequest;
+  try {
+    const ranking = await cloud.loadRanking();
+    if (request !== rankingRequest || !account) return;
+    const profile = cloud.currentProfile();
+    const me = profile
+      ? { uid: account.uid, name: profile.name, furColor: profile.furColor, bestScore: profile.bestScore }
+      : null;
+    rankingView.show(ranking, me);
+  } catch (error) {
+    console.warn('[Osvaldo] ranking:', error);
+    if (request === rankingRequest) rankingView.showError();
+  }
+}
+
 /* --------------------------------------------------------------- acesso -- */
 
 /** Entrou (cadastro, login ou sessão salva): segue direto para a cor. */
 function enterAs(next: Account): void {
-  if (account?.uid !== next.uid) sessionRecord = 0; // recorde é por conta/sessão
+  if (account?.uid !== next.uid) {
+    sessionRecord = 0; // recorde é por conta
+    profileApplied = false;
+    colorTouched = false;
+    cloud.connect(next, () => newProfile(next.name, selectedColorId, audio.muted), applyProfile);
+  }
   account = next;
   hudPlayer.textContent = next.name;
   colorPlayerName.textContent = next.name;
@@ -367,6 +464,7 @@ function showAuth(screen: 'signup' | 'login'): void {
 
 async function logout(): Promise<void> {
   stopRound();
+  cloud.disconnect();
   account = null; // antes do signOut, para o watchAccount não navegar de novo
   showAuth('login');
   try {
@@ -442,16 +540,13 @@ colorOptions.addEventListener('click', (event) => {
   const colorId = button.dataset.color as FurColorId | undefined;
   if (!colorId || !(colorId in FUR_PALETTES)) return;
 
-  selectedColorId = colorId;
-  for (const swatch of colorOptions.querySelectorAll<HTMLButtonElement>('.color-swatch')) {
-    const isSelected = swatch === button;
-    swatch.classList.toggle('is-selected', isSelected);
-    swatch.setAttribute('aria-checked', String(isSelected));
-  }
+  colorTouched = true;
+  selectColor(colorId);
 });
 
 btnConfirmColor.addEventListener('click', () => {
   renderer.setFurColor(selectedColorId);
+  cloud.savePrefs({ furColor: selectedColorId });
   showScreen('game');
   beginRound();
 });
@@ -463,6 +558,13 @@ btnAgain.addEventListener('click', () => {
 
 btnLogout.addEventListener('click', () => void logout());
 
+btnRankingColor.addEventListener('click', () => void openRanking('color'));
+btnRankingGameOver.addEventListener('click', () => void openRanking('game'));
+btnRankingBack.addEventListener('click', () => {
+  rankingRequest++; // descarta um carregamento que ainda esteja a caminho
+  showScreen(rankingReturn);
+});
+
 btnPause.addEventListener('click', () => togglePause());
 btnResume.addEventListener('click', () => togglePause(false));
 btnQuit.addEventListener('click', () => {
@@ -473,8 +575,8 @@ btnQuit.addEventListener('click', () => {
 btnSound.addEventListener('click', () => {
   audio.unlock();
   const muted = audio.toggleMute();
-  soundIcon.textContent = muted ? '🔇' : '🔊';
-  btnSound.setAttribute('aria-pressed', String(muted));
+  setSoundIcon();
+  cloud.savePrefs({ soundMuted: muted });
 });
 
 attachInput(board, {
@@ -522,7 +624,7 @@ $('controls-hint').textContent = coarsePointer
 // Cor inicial da marca; cada partida sorteia a sua a partir daqui.
 applyColorway(DEFAULT_COLORWAY);
 
-soundIcon.textContent = audio.muted ? '🔇' : '🔊';
+setSoundIcon();
 
 if (!isAuthConfigured) {
   for (const form of [signupForm, loginForm]) {
@@ -544,6 +646,7 @@ watchAccount((current) => {
   // Aqui só interessa a sessão que caiu por fora (expirou, saiu em outra aba).
   if (!current && account) {
     stopRound();
+    cloud.disconnect();
     account = null;
     showAuth('login');
   }

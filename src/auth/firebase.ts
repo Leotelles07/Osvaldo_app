@@ -8,6 +8,7 @@
  * sessão fica no IndexedDB e volta sozinha ao reabrir o app.
  */
 import {
+  connectAuthEmulator,
   createUserWithEmailAndPassword,
   getAuth,
   onAuthStateChanged,
@@ -16,7 +17,7 @@ import {
   updateProfile,
   type Auth,
 } from 'firebase/auth';
-import { firebaseApp, isFirebaseConfigured } from '../firebase/app';
+import { firebaseApp, isFirebaseConfigured, useEmulators } from '../firebase/app';
 import { displayNameFor, type SignInInput, type SignUpInput } from './validation';
 
 export interface Account {
@@ -34,6 +35,7 @@ function requireAuth(): Auth {
   if (!auth) {
     auth = getAuth(firebaseApp());
     auth.languageCode = 'pt-BR';
+    if (useEmulators) connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   }
   return auth;
 }

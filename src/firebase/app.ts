@@ -9,10 +9,18 @@
  */
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
 
+/**
+ * Desenvolvimento local contra os emuladores do Firebase (login e banco de
+ * mentira, nada encosta no projeto real). Ligue com VITE_USE_EMULATORS=1 no
+ * .env.local e rode `npm run emulators` em outro terminal.
+ */
+export const useEmulators = import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === '1';
+
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  // Projeto "demo-" nos emuladores: o SDK nunca tenta falar com a nuvem.
+  projectId: useEmulators ? 'demo-osvaldo' : import.meta.env.VITE_FIREBASE_PROJECT_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   // Opcionais: o login e o Firestore funcionam sem eles.
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,

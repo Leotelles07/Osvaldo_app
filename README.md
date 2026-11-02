@@ -50,7 +50,9 @@ Cadastro ⇄ Entrar ──▶ Escolha de cor ──▶ Jogo (contagem → partid
 ```
 
 "Sair" na pausa volta para a escolha de cor; **Sair da conta** (na escolha de
-cor e no fim de jogo) volta para a tela de Entrar.
+cor e no fim de jogo) volta para a tela de Entrar. **Ranking** (na escolha de
+cor e no fim de jogo) mostra os 5 melhores jogadores, e **Voltar** retorna para
+onde o jogador estava.
 
 ---
 
@@ -96,6 +98,8 @@ publicado — não há secret para cadastrar no GitHub.
 | `VITE_FIREBASE_AUTH_DOMAIN` | `authDomain` |
 | `VITE_FIREBASE_PROJECT_ID` | `projectId` |
 | `VITE_FIREBASE_APP_ID` | `appId` |
+| `VITE_FIREBASE_STORAGE_BUCKET` | `storageBucket` (opcional) |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` (opcional) |
 
 > Esses valores são a configuração **pública** do app web — eles vão para o
 > navegador de qualquer jeito. Quem protege as contas é o Firebase (senhas
@@ -116,6 +120,73 @@ e não vai para o Git.
 
 O Firebase mantém a sessão salva no navegador (IndexedDB), por isso o jogador
 continua logado ao reabrir o app até tocar em **Sair da conta**.
+
+## Banco de dados (Firestore)
+
+Depois do login, o app salva no **Cloud Firestore** do mesmo projeto:
+
+| Coleção | O que guarda | Quem lê | Quem grava |
+| --- | --- | --- | --- |
+| `users/{uid}` | Nome, cor do Osvaldo, som ligado/desligado, recorde, partidas jogadas, pontos somados | só o dono | só o dono |
+| `users/{uid}/matches/{id}` | Cada partida: pontos, causa da morte, petiscos comidos, chocolates, tamanho, duração, cor, combinação de cores, toque ou teclado, versão do app | só o dono | só o dono, e só cria (histórico imutável) |
+| `leaderboard/{uid}` | Melhor resultado do jogador: nome, cor do Osvaldo no recorde e pontos | qualquer pessoa logada | só o dono, e só se o recorde subir |
+
+- **Sem e-mail no banco:** ele já fica no Firebase Authentication. O ranking
+  mostra só o nome e o rostinho do Osvaldo.
+- **Ranking:** top 5 por pontos; no empate, fica na frente quem chegou primeiro.
+  Quem está fora do top 5 vê a própria posição embaixo da lista.
+- **A cor e o som acompanham a conta:** ao entrar em outro aparelho, o Osvaldo
+  já vem na última cor confirmada.
+- **Sem internet** o jogo segue normal: o cache local guarda o perfil, e a
+  partida terminada offline sobe sozinha quando a conexão voltar. Se o banco
+  falhar, o jogo continua; só não salva.
+- **Leve na abertura:** o SDK do Firestore só é baixado depois do login.
+
+As **regras de segurança** ficam em [`firestore.rules`](firestore.rules) e os
+**índices** em [`firestore.indexes.json`](firestore.indexes.json), versionados.
+Em resumo, as regras:
+
+- bloqueiam tudo sem login;
+- aceitam só os campos listados, com tipo e faixa de valores;
+- usam a hora do servidor em todas as datas;
+- amarram partida, estatísticas e ranking numa gravação só: os pontos têm de
+  bater com os petiscos comidos, e o ranking com o recorde do perfil.
+
+> A pontuação é calculada no aparelho. As regras barram valores impossíveis e
+> incoerentes, mas não provam que a partida aconteceu de verdade. Blindar isso
+> exigiria validar no servidor (Cloud Functions, que pedem o plano Blaze).
+
+### Publicar regras e índices
+
+As regras e os índices **não sobem com o site**: publique sempre que mudar
+`firestore.rules` ou `firestore.indexes.json`.
+
+```bash
+npx firebase login
+npm run deploy:firestore
+```
+
+O índice do ranking leva alguns minutos para ficar pronto depois da primeira
+publicação; até lá o ranking mostra o aviso de falha ao carregar.
+
+### Testar sem encostar no banco real
+
+```bash
+npm run test:rules   # testes das regras no emulador (precisa de Java 21)
+```
+
+Para jogar no navegador contra emuladores locais (login e banco de mentira),
+rode em um terminal:
+
+```bash
+npm run emulators
+```
+
+E, em outro, com `VITE_USE_EMULATORS=1` no `.env.local`:
+
+```bash
+npm run dev
+```
 
 ### Outros comandos
 
@@ -175,7 +246,8 @@ Em resumo:
 | UI das telas | **HTML + CSS puro** | As telas (cadastro, entrar, cor, contagem, pausa, fim) são DOM comum: acessíveis, com teclado do celular e gerenciador de senhas funcionando de verdade e sem o custo de um framework. |
 | Jogo | **Canvas 2D** | Um único elemento redesenhado a cada quadro. Sem DOM por segmento, sem WebGL: roda liso em aparelho simples e não gasta bateria. |
 | Áudio | **Web Audio API** | Efeitos sintetizados na hora — zero arquivos para baixar. |
-| Contas | **Firebase Authentication** | Cadastro e login com e-mail e senha sem manter servidor próprio. O resto continua estático: o recorde da sessão vive só no aparelho. |
+| Contas | **Firebase Authentication** | Cadastro e login com e-mail e senha sem manter servidor próprio. |
+| Dados | **Cloud Firestore** | Perfil, histórico de partidas e ranking, protegidos por regras versionadas e testadas no emulador. Carregado sob demanda, com cache offline. |
 
 ### Estrutura
 
@@ -186,6 +258,14 @@ src/
 │   ├── firebase.ts      Cadastro, login, saída e sessão salva (Firebase Auth)
 │   ├── validation.ts    Regras dos formulários e mensagens de erro em português
 │   └── __tests__/       Testes das regras de acesso
+├── firebase/
+│   └── app.ts           App do Firebase compartilhado (login e banco) e emuladores
+├── data/
+│   ├── schema.ts        Formato dos documentos e limites (os mesmos das regras)
+│   ├── firestore.ts     Leituras e gravações: perfil, partida, ranking
+│   ├── store.ts         Cria o banco (cache offline); carregado sob demanda
+│   ├── cloud.ts         O jogador logado no banco: conecta, salva, lê o ranking
+│   └── __tests__/       Testes do formato dos dados
 ├── styles.css           Layout mobile-first (dvh + safe-area, sem scroll)
 ├── game/
 │   ├── config.ts        Balanceamento: velocidade, crescimento, tamanho do tabuleiro
@@ -198,7 +278,12 @@ src/
 └── ui/
     ├── authForm.ts      Liga os formulários de acesso ao DOM (erros, carregando)
     ├── mascot.ts        Osvaldo animado da escolha de cor
-    └── furHeads.ts      Cabecinhas das opções de cor
+    ├── furHeads.ts      Cabecinhas das opções de cor e do ranking
+    └── ranking.ts       Tela de ranking (top 5)
+
+firestore.rules          Regras de segurança do Firestore
+firestore.indexes.json   Índices do Firestore
+tests/rules/             Testes das regras, rodados no emulador
 ```
 
 ### Decisões que fazem o jogo parecer "gostoso"

@@ -198,3 +198,19 @@ export function startFurHeads(container: HTMLElement, getSelected: () => FurColo
     cancelAnimationFrame(raf);
   };
 }
+
+/**
+ * Rostinho parado do Osvaldo numa cor, para listas (ranking). O canvas pode
+ * ter qualquer tamanho CSS: o desenho escala para caber.
+ */
+export function drawFurFace(canvas: HTMLCanvasElement, color: FurColorId, cssSize: number): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(cssSize * dpr);
+  canvas.height = Math.round(cssSize * dpr);
+  const scale = (cssSize * dpr) / SIZE;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.clearRect(0, 0, SIZE, SIZE);
+  drawFrontHead(ctx, FUR_PALETTES[color] ?? FUR_PALETTES.default, REST);
+}
