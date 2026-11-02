@@ -258,18 +258,29 @@
         </main>
 
         <!-- Setas de direção (só aparecem em telas de toque) -->
+        <!-- Cruz direcional (só toque). A ordem no DOM segue a leitura
+             (cima, esquerda, direita, baixo); a posição vem do grid. -->
         <div id="dpad" class="dpad" role="group" aria-label="Setas de direção">
-          <button class="dpad__btn" type="button" data-dir="left" aria-label="Esquerda">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
-          </button>
-          <button class="dpad__btn" type="button" data-dir="up" aria-label="Cima">
+          <button class="dpad__btn dpad__btn--up" type="button" data-dir="up" aria-label="Cima">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7" /></svg>
           </button>
-          <button class="dpad__btn" type="button" data-dir="down" aria-label="Baixo">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" /></svg>
+          <button class="dpad__btn dpad__btn--left" type="button" data-dir="left" aria-label="Esquerda">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
           </button>
-          <button class="dpad__btn" type="button" data-dir="right" aria-label="Direita">
+          <span class="dpad__hub" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <ellipse cx="12" cy="16.2" rx="4.6" ry="3.9" />
+              <ellipse cx="5.4" cy="10.6" rx="2" ry="2.5" transform="rotate(-18 5.4 10.6)" />
+              <ellipse cx="9.4" cy="6.6" rx="2" ry="2.6" transform="rotate(-6 9.4 6.6)" />
+              <ellipse cx="14.6" cy="6.6" rx="2" ry="2.6" transform="rotate(6 14.6 6.6)" />
+              <ellipse cx="18.6" cy="10.6" rx="2" ry="2.5" transform="rotate(18 18.6 10.6)" />
+            </svg>
+          </span>
+          <button class="dpad__btn dpad__btn--right" type="button" data-dir="right" aria-label="Direita">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+          <button class="dpad__btn dpad__btn--down" type="button" data-dir="down" aria-label="Baixo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" /></svg>
           </button>
         </div>
 
