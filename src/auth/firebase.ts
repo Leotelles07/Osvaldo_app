@@ -1,15 +1,12 @@
 /**
  * Acesso com e-mail e senha pelo Firebase Auth.
  *
- * As chaves vêm de variáveis VITE_FIREBASE_* (ver .env.example). Elas são a
- * configuração pública do app web — vão para o bundle de qualquer jeito —, e
- * quem protege as contas são as regras do Firebase, não o segredo delas.
- * Sem as variáveis o jogo abre normalmente e as telas de acesso avisam.
+ * A configuração do Firebase mora em firebase/app.ts (compartilhada com o
+ * banco). Sem as variáveis o jogo abre normalmente e as telas de acesso avisam.
  *
  * "Continuar logado" é o comportamento padrão do getAuth() no navegador: a
  * sessão fica no IndexedDB e volta sozinha ao reabrir o app.
  */
-import { initializeApp } from 'firebase/app';
 import {
   createUserWithEmailAndPassword,
   getAuth,
@@ -19,6 +16,7 @@ import {
   updateProfile,
   type Auth,
 } from 'firebase/auth';
+import { firebaseApp, isFirebaseConfigured } from '../firebase/app';
 import { displayNameFor, type SignInInput, type SignUpInput } from './validation';
 
 export interface Account {
@@ -27,21 +25,14 @@ export interface Account {
   email: string;
 }
 
-const config = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-export const isAuthConfigured = Object.values(config).every(Boolean);
+export const isAuthConfigured = isFirebaseConfigured;
 
 let auth: Auth | null = null;
 
 function requireAuth(): Auth {
   if (!isAuthConfigured) throw Object.assign(new Error('Firebase sem configuração'), { code: 'auth/not-configured' });
   if (!auth) {
-    auth = getAuth(initializeApp(config));
+    auth = getAuth(firebaseApp());
     auth.languageCode = 'pt-BR';
   }
   return auth;

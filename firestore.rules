@@ -1,0 +1,211 @@
+rules_version = '2';
+
+// =============================================================================
+// Osvaldo Games — regras de segurança do Firestore
+//
+// Estrutura (ver README, seção "Banco de dados"):
+//   users/{uid}                  perfil e estatísticas — só o dono
+//   users/{uid}/matches/{id}     histórico de partidas — só o dono, só cria
+//   leaderboard/{uid}            recorde público — todos logados leem
+//
+// Princípios:
+//   1. Nada sem login. Cada jogador só escreve nos próprios documentos.
+//   2. Campos fechados: nenhum campo além dos listados, todos com tipo e faixa.
+//   3. Datas pelo servidor: todo carimbo de tempo tem de ser `request.time`
+//      (serverTimestamp() no app), então o relógio do aparelho não conta.
+//   4. Partida, estatísticas e ranking andam juntos, na mesma gravação em lote:
+//      a partida só entra se o perfil apontar para ela (lastMatchId) e somar os
+//      pontos dela; o perfil só soma pontos com a partida correspondente; o
+//      ranking só aceita o recorde que está no perfil.
+//
+// Limite conhecido: a pontuação é calculada no aparelho. As regras barram
+// valores impossíveis e incoerentes, mas não provam que a partida aconteceu.
+// Para isso seria preciso validar no servidor (Cloud Functions, plano Blaze).
+//
+// As faixas abaixo precisam bater com src/data/schema.ts.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------ comuns --
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function maxScore() {
+      return 10000;
+    }
+
+    function isFurColor(value) {
+      return value in ['default', 'preto', 'marrom', 'branco'];
+    }
+
+    function isName(value) {
+      return value is string && value.size() >= 1 && value.size() <= 20;
+    }
+
+    function isCount(value, max) {
+      return value is int && value >= 0 && value <= max;
+    }
+
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function matchPath(uid, matchId) {
+      return /databases/$(database)/documents/users/$(uid)/matches/$(matchId);
+    }
+
+    // ------------------------------------------------------------ perfil --
+
+    function userKeys() {
+      return ['name', 'furColor', 'soundMuted', 'bestScore', 'gamesPlayed',
+              'totalPoints', 'lastMatchId', 'createdAt', 'updatedAt', 'lastPlayedAt'];
+    }
+
+    function hasUserShape(data) {
+      return data.keys().hasOnly(userKeys())
+        && data.keys().hasAll(userKeys())
+        && isName(data.name)
+        && isFurColor(data.furColor)
+        && data.soundMuted is bool
+        && isCount(data.bestScore, maxScore())
+        && isCount(data.gamesPlayed, 1000000)
+        && isCount(data.totalPoints, 1000000000)
+        && data.updatedAt == request.time;
+    }
+
+    // Só preferências mudaram (nome, cor, som): estatísticas intactas.
+    function isPrefsUpdate(before, after) {
+      return after.gamesPlayed == before.gamesPlayed
+        && after.totalPoints == before.totalPoints
+        && after.bestScore == before.bestScore
+        && after.lastMatchId == before.lastMatchId
+        && after.lastPlayedAt == before.lastPlayedAt;
+    }
+
+    // Fim de partida: +1 jogo, soma exatamente os pontos da partida nova
+    // (gravada no mesmo lote) e o recorde vira o maior entre o antigo e ela.
+    function isMatchUpdate(uid, before, after) {
+      let matchId = after.lastMatchId;
+      let gained = after.totalPoints - before.totalPoints;
+      return matchId is string
+        && matchId != before.lastMatchId
+        && after.gamesPlayed == before.gamesPlayed + 1
+        && after.lastPlayedAt == request.time
+        && existsAfter(matchPath(uid, matchId))
+        && getAfter(matchPath(uid, matchId)).data.score == gained
+        && ((gained > before.bestScore && after.bestScore == gained)
+          || (gained <= before.bestScore && after.bestScore == before.bestScore));
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+
+      // Perfil novo sempre nasce zerado.
+      allow create: if isOwner(uid)
+        && hasUserShape(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.bestScore == 0
+        && request.resource.data.gamesPlayed == 0
+        && request.resource.data.totalPoints == 0
+        && request.resource.data.lastMatchId == null
+        && request.resource.data.lastPlayedAt == null;
+
+      allow update: if isOwner(uid)
+        && hasUserShape(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (isPrefsUpdate(resource.data, request.resource.data)
+          || isMatchUpdate(uid, resource.data, request.resource.data));
+
+      // Apagar a conta fica para quando existir o fluxo de exclusão.
+      allow delete: if false;
+
+      // ---------------------------------------------------------- partidas --
+      match /matches/{matchId} {
+        allow read: if isOwner(uid);
+
+        // Só cria, junto com a atualização do perfil que aponta para ela.
+        // Os pontos precisam bater com os petiscos comidos (config.ts).
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['score', 'cause', 'durationMs', 'treats',
+              'chocolates', 'length', 'furColor', 'colorway', 'input', 'playedAt', 'appVersion'])
+          && request.resource.data.keys().hasAll(['score', 'cause', 'durationMs', 'treats',
+              'chocolates', 'length', 'furColor', 'colorway', 'input', 'playedAt', 'appVersion'])
+          && isCount(request.resource.data.score, maxScore())
+          && request.resource.data.cause in ['tail', 'wall', 'bomb', 'chocolate']
+          && isCount(request.resource.data.durationMs, 86400000)
+          && isTreats(request.resource.data.treats)
+          && request.resource.data.score == treatPoints(request.resource.data.treats)
+          && isCount(request.resource.data.chocolates, 3)
+          && request.resource.data.length is int
+          && request.resource.data.length >= 1
+          && request.resource.data.length <= 1000
+          && isFurColor(request.resource.data.furColor)
+          && request.resource.data.colorway is string
+          && request.resource.data.colorway.size() <= 24
+          && request.resource.data.input in ['touch', 'keyboard']
+          && request.resource.data.playedAt == request.time
+          && request.resource.data.appVersion is string
+          && request.resource.data.appVersion.size() <= 24
+          && getAfter(userPath(uid)).data.lastMatchId == matchId;
+
+        // Histórico é imutável.
+        allow update, delete: if false;
+      }
+    }
+
+    function isTreats(treats) {
+      return treats is map
+        && treats.keys().hasOnly(['bone', 'strawberry', 'banana', 'avocado', 'beef', 'watermelon'])
+        && treats.keys().hasAll(['bone', 'strawberry', 'banana', 'avocado', 'beef', 'watermelon'])
+        && isCount(treats.bone, maxScore())
+        && isCount(treats.strawberry, maxScore())
+        && isCount(treats.banana, maxScore())
+        && isCount(treats.avocado, maxScore())
+        && isCount(treats.beef, maxScore())
+        && isCount(treats.watermelon, maxScore());
+    }
+
+    // Pontos de cada petisco: GOOD_TREATS em src/game/config.ts.
+    function treatPoints(treats) {
+      return treats.bone + treats.strawberry + treats.banana + treats.avocado
+        + treats.beef * 2 + treats.watermelon * 3;
+    }
+
+    // ----------------------------------------------------------- ranking --
+
+    // Linha do ranking: o recorde e o nome têm de ser os do perfil, gravado
+    // no mesmo lote (getAfter enxerga o perfil já com a partida somada).
+    function isLeaderboardEntry(uid, data) {
+      return isOwner(uid)
+        && data.keys().hasOnly(['name', 'furColor', 'bestScore', 'updatedAt'])
+        && data.keys().hasAll(['name', 'furColor', 'bestScore', 'updatedAt'])
+        && isFurColor(data.furColor)
+        && data.updatedAt == request.time
+        && data.bestScore > 0
+        && data.bestScore == getAfter(userPath(uid)).data.bestScore
+        && data.name == getAfter(userPath(uid)).data.name;
+    }
+
+    // Um documento por jogador, com o melhor resultado dele. Público para
+    // quem está logado; só mostra nome, cor do Osvaldo e recorde.
+    match /leaderboard/{uid} {
+      allow read: if signedIn();
+
+      allow create: if isLeaderboardEntry(uid, request.resource.data);
+
+      // O recorde só sobe.
+      allow update: if isLeaderboardEntry(uid, request.resource.data)
+        && request.resource.data.bestScore > resource.data.bestScore;
+
+      allow delete: if false;
+    }
+  }
+}

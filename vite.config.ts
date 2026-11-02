@@ -1,7 +1,12 @@
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
+const { version } = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8')) as { version: string };
+
 export default defineConfig({
+  // Versão do app gravada em cada partida salva no Firestore.
+  define: { __APP_VERSION__: JSON.stringify(version) },
   // Caminhos relativos: o mesmo build funciona servido na raiz (servidor local,
   // Vercel, Netlify) e dentro de um subdiretório (GitHub Pages, que publica em
   // /Osvaldo_app/). Sem isso, a página abriria em branco em um dos dois casos.
