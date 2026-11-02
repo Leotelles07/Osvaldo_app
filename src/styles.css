@@ -662,11 +662,25 @@ body {
 }
 
 /* --------------------------------------------------- setas (só toque) -- */
+/* Cruz direcional: cima, esquerda/direita e baixo em volta de uma patinha.
+   O tamanho da tecla acompanha a altura útil da tela (dvh), com piso no alvo
+   de toque mínimo e teto para não roubar espaço do tabuleiro em telas altas. */
 .dpad {
+  --dpad-key: clamp(44px, 7.4vh, 68px); /* fallback sem dvh (iOS < 16.4) */
+  --dpad-key: clamp(44px, 7.4dvh, 68px);
+  --dpad-gap: clamp(4px, 0.9dvh, 10px);
   display: none;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-2);
-  padding: var(--space-1) 0;
+  grid-template-columns: repeat(3, var(--dpad-key));
+  grid-template-rows: repeat(3, var(--dpad-key));
+  grid-template-areas:
+    '.    up   .'
+    'left hub  right'
+    '.    down .';
+  gap: var(--dpad-gap);
+  justify-content: center;
+  align-content: center;
+  /* espaço embaixo para a sombra sólida da tecla de baixo */
+  padding: var(--space-1) 0 calc(var(--space-1) + 5px);
   touch-action: none; /* sem zoom de toque duplo nem atraso de clique */
 }
 
@@ -676,8 +690,22 @@ body {
   }
 }
 
+.dpad__btn--up {
+  grid-area: up;
+}
+.dpad__btn--left {
+  grid-area: left;
+}
+.dpad__btn--right {
+  grid-area: right;
+}
+.dpad__btn--down {
+  grid-area: down;
+}
+
 .dpad__btn {
-  height: clamp(54px, 8dvh, 70px);
+  width: 100%;
+  height: 100%;
   border: var(--stroke-2) solid var(--ink);
   border-radius: var(--radius-md);
   background: var(--paper);
@@ -688,12 +716,12 @@ body {
   padding: 0;
   cursor: pointer;
   transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease,
-    background var(--t-fast) ease;
+    background var(--t-fast) ease, opacity var(--t-fast) ease;
 }
 
 .dpad__btn svg {
-  width: 30px;
-  height: 30px;
+  width: 46%;
+  height: 46%;
   fill: none;
   stroke: currentColor;
   stroke-width: 3.5;
@@ -701,7 +729,10 @@ body {
   stroke-linejoin: round;
 }
 
-.dpad__btn:active {
+/* :active nem sempre dispara no toque (o pointerdown é cancelado para não
+   roubar foco), então a classe .is-pressed do input.ts faz o mesmo papel. */
+.dpad__btn:active,
+.dpad__btn.is-pressed {
   transform: translateY(4px);
   box-shadow: var(--shadow-pressed);
 }
@@ -709,6 +740,68 @@ body {
 /* Direção atual do Osvaldo */
 .dpad__btn.is-current {
   background: var(--cw-accent);
+  color: var(--cw-on-accent);
+}
+
+/* Meia-volta: o jogo ignora, então a tecla fica apagada e sem relevo. */
+.dpad__btn[aria-disabled='true'] {
+  opacity: 0.45;
+  box-shadow: var(--shadow-pressed);
+  transform: translateY(4px);
+}
+
+/* Patinha do centro: só decoração, marca o eixo da cruz. */
+.dpad__hub {
+  grid-area: hub;
+  place-self: center;
+  width: 62%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: var(--stroke-1) solid var(--ink);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  opacity: 0.55;
+}
+
+.dpad__hub svg {
+  width: 62%;
+  height: 62%;
+  fill: var(--ink);
+}
+
+/* Celular deitado: a cruz em pé comeria quase toda a altura. Ela vai para a
+   lateral, ao lado do tabuleiro, e as teclas passam a seguir a altura livre. */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) and (max-height: 540px) {
+  .screen--game.is-active {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'hud      hud'
+      'stage    dpad'
+      'controls controls';
+    column-gap: var(--space-4);
+  }
+
+  .screen--game .hud {
+    grid-area: hud;
+  }
+
+  .screen--game .stage {
+    grid-area: stage;
+  }
+
+  .screen--game .controls {
+    grid-area: controls;
+  }
+
+  .dpad {
+    grid-area: dpad;
+    --dpad-key: clamp(40px, 13vh, 60px);
+    --dpad-key: clamp(40px, 13dvh, 60px);
+    --dpad-gap: var(--space-1);
+  }
 }
 
 /* ---------------------------------------------------------- animações -- */
