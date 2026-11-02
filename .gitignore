@@ -3,3 +3,9 @@ dist
 .DS_Store
 *.local
 .vite
+
+# Firebase CLI / emulador
+.firebase
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

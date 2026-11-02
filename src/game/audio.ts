@@ -38,7 +38,12 @@ class AudioEngine {
   }
 
   toggleMute(): boolean {
-    this.muted = !this.muted;
+    return this.setMuted(!this.muted);
+  }
+
+  /** Liga/desliga o som e lembra a escolha neste aparelho. */
+  setMuted(muted: boolean): boolean {
+    this.muted = muted;
     try {
       localStorage.setItem(STORAGE_KEY, this.muted ? '1' : '0');
     } catch {

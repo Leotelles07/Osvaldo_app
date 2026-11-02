@@ -50,6 +50,10 @@ export class Game {
   score = 0;
   /** Quantos chocolates o Osvaldo já comeu nesta partida. */
   chocolates = 0;
+  /** Quantos petiscos bons de cada tipo ele comeu nesta partida. */
+  treatsEaten: Record<GoodTreatKind, number> = emptyTreatCounts();
+  /** Tempo de jogo da partida (ms). Pausado não conta: o update nem roda. */
+  elapsedMs = 0;
   phase: Phase = 'ready';
   /** Progresso (0..1) entre o passo anterior e o atual. */
   alpha = 0;
@@ -102,6 +106,8 @@ export class Game {
     this.deathCell = null;
     this.deathCause = null;
     this.chocolates = 0;
+    this.treatsEaten = emptyTreatCounts();
+    this.elapsedMs = 0;
     this.sickRemainingMs = 0;
     this.hazards = [];
     this.placeTreat();
@@ -162,6 +168,7 @@ export class Game {
 
     // Um pico de lag não pode teletransportar o Osvaldo.
     const delta = Math.min(deltaMs, 120);
+    this.elapsedMs += delta;
     this.accumulator += delta;
     this.sickRemainingMs = Math.max(0, this.sickRemainingMs - delta);
 
@@ -228,6 +235,7 @@ export class Game {
     const eaten = this.treat;
     const points = GOOD_TREATS[eaten.kind].points;
     this.score += points;
+    this.treatsEaten[eaten.kind] += 1;
     this.pendingGrowth += CONFIG.growPerTreat;
     this.stepMs = Math.max(CONFIG.minStepMs, this.stepMs - CONFIG.speedUpPerTreat);
     this.placeTreat();
@@ -312,6 +320,10 @@ export class Game {
       this.hazards.push({ x: pick % this.cols, y: Math.floor(pick / this.cols), kind });
     }
   }
+}
+
+function emptyTreatCounts(): Record<GoodTreatKind, number> {
+  return Object.fromEntries(Object.keys(GOOD_TREATS).map((kind) => [kind, 0])) as Record<GoodTreatKind, number>;
 }
 
 function pickGoodKind(): GoodTreatKind {

@@ -305,4 +305,21 @@ describe('Osvaldo', () => {
     expect(game.hazards).toHaveLength(0);
     expect(game.deathCause).toBeNull();
   });
+
+  it('conta os petiscos comidos e o tempo de jogo, para salvar a partida', () => {
+    const game = newGame();
+    treatAhead(game, 'watermelon');
+    step(game);
+    treatAhead(game, 'bone');
+    step(game);
+    treatAhead(game, 'bone');
+    step(game);
+    expect(game.treatsEaten).toMatchObject({ watermelon: 1, bone: 2, beef: 0 });
+    expect(game.score).toBe(GOOD_TREATS.watermelon.points + 2 * GOOD_TREATS.bone.points);
+    expect(game.elapsedMs).toBeGreaterThan(0);
+
+    game.reset();
+    expect(game.treatsEaten.bone).toBe(0);
+    expect(game.elapsedMs).toBe(0);
+  });
 });
